@@ -449,6 +449,8 @@ $("av-flottant").innerHTML = ICO.prof;
    3. Progression (navigateur + Supabase)
    etat = { lues: {finance:{3:"2026-10-16"}}, quiz: {finance:{3:{bons:2,total:3}}}, jours: ["2026-10-16"], questions: {"2026-10-16": 2} }
    ========================================================= */
+// Navigateur qui utilisait déjà le site avant le déblocage par élève : il garde le calendrier d'origine (voir debutEleve)
+const dejaVenu = lire("etat-v1", null) !== null;
 let etat = Object.assign({ lues: { finance: {}, trading: {} }, quiz: { finance: {}, trading: {} }, jours: [], questions: {} }, lire("etat-v1", {}));
 for (const c of ["finance", "trading"]) { etat.lues[c] = etat.lues[c] || {}; etat.quiz[c] = etat.quiz[c] || {}; }
 let eleve = lire("eleve", null);
@@ -488,6 +490,12 @@ async function syncRecevoir() {
       const ns = new Set([...Object.keys(etat.lues[c]), ...Object.keys(etat.quiz[c])]);
       for (const n of ns) if (!enLigne.has(c + ":" + n)) syncEnvoyer(c, Number(n));
     }
+    // progression récupérée d'un autre appareil : on fait démarrer le calendrier au plus tard à la première leçon lue
+    for (const c of ["finance", "trading"]) {
+      if (!DATA[c]) continue;
+      const premiere = Object.values(etat.lues[c]).sort()[0];
+      if (premiere && premiere < debutEleve(c)) { ecrire("debut-" + c, premiere); debloquer(c); }
+    }
     sauver(); return true;
   } catch (e) { return false; }
 }
@@ -521,16 +529,45 @@ let coursActif = lire("cours", "finance"); if (!COURS[coursActif]) coursActif = 
 async function charger(c) {
   if (DATA[c]) return DATA[c];
   const d = JSON.parse(document.getElementById("data-" + c).textContent);
-  d.total = d.modules.reduce((s, m) => s + m.lecons.length, 0);
-  d.dispo = Object.keys(d.lecons).map(Number).sort((a, b) => a - b);
+  // Ordre de lecture : les leçons de chaque module, puis son récap (identifiant 100 + numéro du module)
+  d.toutes = Object.assign({}, d.lecons);
+  for (const [m, r] of Object.entries(d.recaps || {})) d.toutes[RECAP + Number(m)] = r;
+  d.ordre = d.modules.flatMap(m => [...m.lecons.map(l => l.n), RECAP + m.n]);
+  d.total = d.ordre.length;
+  DATA[c] = d; debloquer(c); return d;
+}
+const RECAP = 100;
+const estRecap = n => n > RECAP;
+// Jour du calendrier (1 = premier jour) : un récap sort le lendemain de la dernière leçon de son module
+const jourDe = (d, n) => estRecap(n) ? Math.max(...d.modules.find(m => m.n === n - RECAP).lecons.map(l => l.n)) + 1 : n;
+const lien = n => estRecap(n) ? "recap-" + (n - RECAP) : "lecon-" + pad(n);
+const nomDe = n => estRecap(n) ? "Récap du module " + (n - RECAP) : "Leçon " + n;
+/* Chaque élève a sa propre date de départ (sa première visite) : la leçon 1 est ouverte tout de suite,
+   puis une nouvelle leçon chaque matin à 8h. Les leçons pas encore débloquées restent dans d.toutes. */
+function debutEleve(c) {
+  let debut = lire("debut-" + c, null);
+  if (!debut) { debut = dejaVenu ? DATA[c].debut : jourISO(); ecrire("debut-" + c, debut); }
+  return debut;
+}
+function debloquer(c) {
+  const d = DATA[c]; if (!d) return;
+  d.debutEleve = debutEleve(c);
+  const maintenant = new Date(), lecons = {};
+  for (const n of d.ordre) {
+    if (!d.toutes[n]) continue;
+    const j = jourDe(d, n), quand = new Date(d.debutEleve + "T08:00:00"); quand.setDate(quand.getDate() + j - 1);
+    if (j === 1 || quand <= maintenant) lecons[n] = d.toutes[n];
+  }
+  d.lecons = lecons;
+  d.dispo = d.ordre.filter(n => lecons[n]);
   d.derniere = d.dispo[d.dispo.length - 1] || 1;
-  DATA[c] = d; return d;
 }
 const D = () => DATA[coursActif];
-const moduleDe = n => D().modules.find(m => m.lecons.some(l => l.n === n));
-const titreDe = n => { const d = D(); if (d.lecons[n] && d.lecons[n].titre) return d.lecons[n].titre; for (const m of d.modules) for (const l of m.lecons) if (l.n === n) return l.titre; return "Leçon " + n; };
+const moduleDe = n => D().modules.find(m => estRecap(n) ? m.n === n - RECAP : m.lecons.some(l => l.n === n));
+const suivante = n => D().ordre[D().ordre.indexOf(n) + 1];
+const titreDe = n => { const d = D(); if (d.lecons[n] && d.lecons[n].titre) return d.lecons[n].titre; for (const m of d.modules) for (const l of m.lecons) if (l.n === n) return l.titre; return nomDe(n); };
 const couleur = m => `var(--m${m ? m.n : 8})`;
-const dateDe = n => { const d = new Date(D().debut + "T08:00:00"); d.setDate(d.getDate() + n - 1); return d; };
+const dateDe = n => { const d = new Date(D().debutEleve + "T08:00:00"); d.setDate(d.getDate() + jourDe(D(), n) - 1); return d; };
 const minutes = n => (D().lecons[n] || {}).minutes || 15;
 const estLue = (n, c = coursActif) => !!etat.lues[c][n];
 
@@ -579,9 +616,9 @@ function accueil() {
     <section class="module" style="--c:${couleur(mod)}">
       <header><div class="pastille">${mod.n}</div><div class="eyebrow">Module ${mod.n}</div><span class="pct">${lu}/${mod.lecons.length}</span><h3>${esc(mod.titre)}</h3></header>
       <div class="jauge"><i style="width:${lu / mod.lecons.length * 100}%"></i></div>
-      <ol>${mod.lecons.map(l => d.lecons[l.n]
-        ? `<li><a href="#${coursActif}/lecon-${pad(l.n)}"><span class="n num">${pad(l.n)}</span><span>${esc(l.titre)}</span>${estLue(l.n) ? '<span class="etat lue">✓ Lue</span>' : '<span class="etat dispo">À lire</span>'}</a></li>`
-        : `<li><div class="row"><span class="n num">${pad(l.n)}</span><span>${esc(l.titre)}</span><span class="etat bientot num">${fmt(dateDe(l.n))}</span></div></li>`).join("")}</ol>
+      <ol>${[...mod.lecons, { n: RECAP + mod.n, titre: "Récap : tout le module en une leçon" }].map(l => d.lecons[l.n]
+        ? `<li><a href="#${coursActif}/${lien(l.n)}"><span class="n num">${estRecap(l.n) ? "★" : pad(l.n)}</span><span>${esc(l.titre)}</span>${estLue(l.n) ? '<span class="etat lue">✓ Lue</span>' : '<span class="etat dispo">À lire</span>'}</a></li>`
+        : `<li><div class="row"><span class="n num">${estRecap(l.n) ? "★" : pad(l.n)}</span><span>${esc(l.titre)}</span><span class="etat bientot num">${fmt(dateDe(l.n))}</span></div></li>`).join("")}</ol>
     </section>`; }).join("");
 
   const bs = badges();
@@ -593,7 +630,7 @@ function accueil() {
         <h1>${esc(c.titre).replace("\n", "<br>")}</h1>
         <p>${esc(c.accroche)}</p>
         <div class="actions">
-          <a class="btn gold" href="#${coursActif}/lecon-${pad(cible)}">${enAvance ? "Relire la dernière leçon" : nbLues ? "Continuer" : "Commencer"} →</a>
+          <a class="btn gold" href="#${coursActif}/${lien(cible)}">${enAvance ? "Relire la dernière leçon" : nbLues ? "Continuer" : "Commencer"} →</a>
           <button class="btn ghost" type="button" data-prof ${profDispo() ? "" : "hidden"}>${ICO.prof} Demander au prof</button>
         </div>
       </div>
@@ -607,7 +644,7 @@ function accueil() {
     <div class="tuiles">
       <div class="tuile flamme"><div class="eyebrow">Série</div><b class="num">${ICO.flamme}${s} jour${s > 1 ? "s" : ""}</b><div class="semaine">${sem}</div></div>
       <div class="tuile"><div class="eyebrow">Niveau ${niv.rang}</div><b>${esc(niv.nom)}</b><div class="barre-xp"><i style="width:${xpBarre}%"></i></div><small>${xp} XP${niv.suivant ? " · encore " + (niv.suivant - xp) + " pour « " + esc(niv.nomSuivant) + " »" : ""}</small></div>
-      <div class="tuile"><div class="eyebrow">Publiées</div><b class="num">${d.dispo.length}<small style="font-size:.5em"> / ${d.total}</small></b><small>Prochaine : ${fmt(dateDe(n + 1))} à 8h</small></div>
+      <div class="tuile"><div class="eyebrow">Publiées</div><b class="num">${d.dispo.length}<small style="font-size:.5em"> / ${d.total}</small></b><small>${suivante(n) ? `Prochaine : ${fmt(dateDe(suivante(n)))} à 8h` : "Tout est publié"}</small></div>
       <div class="tuile"><div class="eyebrow">Quiz réussis</div><b class="num">${Object.values(etat.quiz[coursActif]).reduce((a, q) => a + (q.bons || 0), 0)}</b><small>bonnes réponses dans ce cours</small></div>
     </div>
 
@@ -622,7 +659,7 @@ function accueil() {
           <li class="${questAuj ? "ok" : ""}"><i></i>Poser une question au prof</li>
         </ul>
       </div>
-      <a class="btn" href="#${coursActif}/lecon-${pad(cible)}">${estLue(cible) ? "Relire" : "Lire maintenant"} →</a>
+      <a class="btn" href="#${coursActif}/${lien(cible)}">${estLue(cible) ? "Relire" : "Lire maintenant"} →</a>
     </section>
     ${c.avert ? `<p class="avert">${esc(c.avert)}</p>` : ""}
 
@@ -632,7 +669,7 @@ function accueil() {
     </section>
 
     <section class="programme" id="programme">
-      <div class="titre-sec"><h2>Le programme</h2><p>${d.total} leçons · ${d.modules.length} modules · une nouvelle chaque matin</p></div>
+      <div class="titre-sec"><h2>Le programme</h2><p>${d.total - d.modules.length} leçons et ${d.modules.length} récaps · ${d.modules.length} modules · une nouvelle chaque matin</p></div>
       <div class="modules">${mods}</div>
     </section>`;
   $("accueil").querySelector("[data-prof]").onclick = () => ouvrirProf();
@@ -685,10 +722,10 @@ function deco() {
 function lecture(n) {
   const d = D(), m = moduleDe(n), el = $("lecture");
   el.style.setProperty("--c", couleur(m)); $("barre-lecture").style.setProperty("--c", couleur(m));
-  const prev = d.dispo.filter(x => x < n).pop(), next = d.dispo.find(x => x > n);
+  const i = d.dispo.indexOf(n), prev = d.dispo[i - 1], next = d.dispo[i + 1], apres = suivante(n);
   const q = etat.quiz[coursActif][n];
   el.innerHTML = `
-    <div class="lecon-top"><a class="back" href="#${coursActif}">← ${esc(COURS[coursActif].nom)}</a><span class="eyebrow num">Leçon ${pad(n)} / ${d.total}</span></div>
+    <div class="lecon-top"><a class="back" href="#${coursActif}">← ${esc(COURS[coursActif].nom)}</a><span class="eyebrow num">${estRecap(n) ? "Récap" : `Leçon ${pad(n)} / ${d.modules.reduce((s, m) => s + m.lecons.length, 0)}`}</span></div>
     <header class="lecon-head">
       <div class="eyebrow">Module ${m ? m.n : ""} · ${m ? esc(m.titre) : ""}</div>
       <h1>${esc(titreDe(n))}</h1>
@@ -705,8 +742,8 @@ function lecture(n) {
       </div>
     </section>
     <div class="navs">
-      ${prev ? `<a class="btn ghost" href="#${coursActif}/lecon-${pad(prev)}">← Leçon ${prev}</a>` : "<span></span>"}
-      ${next ? `<a class="btn ghost" href="#${coursActif}/lecon-${pad(next)}">Leçon ${next} →</a>` : `<span class="meta" style="color:var(--muted);align-self:center">Leçon ${n + 1} le ${fmt(dateDe(n + 1))} à 8h</span>`}
+      ${prev ? `<a class="btn ghost" href="#${coursActif}/${lien(prev)}">← ${nomDe(prev)}</a>` : "<span></span>"}
+      ${next ? `<a class="btn ghost" href="#${coursActif}/${lien(next)}">${nomDe(next)} →</a>` : apres ? `<span class="meta" style="color:var(--muted);align-self:center">${nomDe(apres)} le ${fmt(dateDe(apres))} à 8h</span>` : "<span></span>"}
     </div>`;
   el.querySelectorAll("article h2").forEach(h => { if (/retenir/i.test(h.textContent)) h.classList.add("retenir"); });
   el.querySelectorAll("article table").forEach(t => { const w = document.createElement("div"); w.className = "table"; t.replaceWith(w); w.appendChild(t); });
@@ -948,7 +985,7 @@ function ouvrirProf(question) {
   if (!profDispo()) { toast("Le prof IA s'active une fois Supabase configuré."); return; }
   $("prof").hidden = false; $("voile").hidden = false; $("ouvrir-prof").hidden = true;
   $("nom-prof").textContent = COURS[coursActif].prof;
-  $("prof-contexte").textContent = leconCourante ? "Leçon " + leconCourante + " · " + titreDe(leconCourante) : "Programme complet · " + COURS[coursActif].nom;
+  $("prof-contexte").textContent = leconCourante ? nomDe(leconCourante) + " · " + titreDe(leconCourante) : "Programme complet · " + COURS[coursActif].nom;
   $("question").placeholder = COURS[coursActif].exemple;
   afficherFil(); majModes();
   if (question) demander(question); else if (matchMedia("(min-width: 721px)").matches) setTimeout(() => $("question").focus(), 60);
@@ -1031,6 +1068,7 @@ $("lien-accueil").onclick = e => { e.preventDefault(); location.hash = "#" + cou
 
 async function route() {
   let h = location.hash.replace(/^#/, "");
+  h = h.replace(/\/recap-(\d+)$/, (x, m) => "/lecon-" + (RECAP + Number(m)));
   let mm = h.match(/^(finance|trading)(?:\/lecon-(\d+))?$/) || h.match(/^lecon-(\d+)$/) && [null, coursActif, h.match(/^lecon-(\d+)$/)[1]];
   const c = mm && mm[1] ? mm[1] : coursActif;
   if (await changerCours(c) === false) return;
