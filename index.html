@@ -98,6 +98,97 @@ window.CONFIG = {
 body.sur-portail .switch { visibility: hidden; }
 .tous-cours { display: inline-block; color: var(--hero-ink); opacity: .75; text-decoration: none; font-size: 14px; margin-bottom: 10px; }
 .tous-cours:hover { opacity: 1; }
+
+/* ---------- Barre latérale (ordinateur) / barre d'onglets (téléphone) ---------- */
+.side { position: fixed; z-index: 25; top: 0; bottom: 0; left: 0; width: 240px; background: var(--surface); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 4px; padding: 18px 14px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; }
+.side .marque { padding: 4px 8px 18px; }
+.side a.nav { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.side a.nav svg { width: 20px; height: 20px; flex: none; color: var(--muted); }
+.side a.nav:hover { background: var(--soft); }
+.side a.nav.actif { background: var(--ink); color: var(--paper); }
+.side a.nav.actif svg { color: var(--gold); }
+.side .sous { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 8px 22px; padding-left: 12px; border-left: 1px solid var(--line); }
+.side .sous a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 14px; }
+.side .sous a i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.side .sous a small { margin-left: auto; font: 500 11px/1 var(--f-mono); }
+.side .sous a:hover, .side .sous a.actif { background: var(--soft); color: var(--ink); }
+.bientot-tag { margin-left: auto; font: 600 10px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; background: var(--gold-soft); color: var(--ink); padding: 4px 6px; border-radius: 6px; }
+.side .bas { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 8px 0; border-top: 1px solid var(--line); }
+.side .mini-niv b { font: 400 16px/1.2 var(--f-display); display: block; }
+.side .mini-niv small { color: var(--muted); font-size: 12px; }
+.mini-barre { height: 6px; border-radius: 6px; background: var(--soft); overflow: hidden; margin-top: 6px; }
+.mini-barre i { display: block; height: 100%; background: var(--gold); border-radius: 6px; }
+@media (min-width: 900px) {
+  html body { padding-left: calc(240px + 32px); padding-right: 32px; }
+  .top { margin-left: -32px; margin-right: -32px; padding-left: 32px; padding-right: 32px; }
+  .top .marque { visibility: hidden; }
+}
+@media (max-width: 899px) {
+  .side { top: auto; right: 0; width: auto; height: calc(64px + env(safe-area-inset-bottom)); flex-direction: row; justify-content: space-around; align-items: stretch;
+    padding: 6px 8px env(safe-area-inset-bottom); border-right: 0; border-top: 1px solid var(--line); overflow: visible;
+    background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .side .marque, .side .sous, .side .bas, .side .bientot-tag { display: none; }
+  .side a.nav { flex: 1; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 4px; font-size: 11px; border-radius: 12px; }
+  .side a.nav.actif { background: var(--soft); color: var(--ink); }
+  .flottant { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  html body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+}
+.switch { display: none !important; }
+
+/* ---------- Tableau de bord ---------- */
+.tdb { padding-block: 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.tdb > *, .grille-tdb > * { min-width: 0; }
+.tdb-hero { background: linear-gradient(135deg, #1b1f3b, #3d1630 55%, #123d33); color: #f6f1e4; border-radius: 24px; padding: clamp(22px, 4vw, 36px);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; position: relative; overflow: hidden; }
+.tdb-hero h1 { font: 400 clamp(28px, 5vw, 42px)/1.1 var(--f-display); margin: 6px 0 10px; }
+.tdb-hero .eyebrow { color: rgba(246,241,228,.7); }
+.tdb-hero .xpbar { height: 12px; border-radius: 12px; background: rgba(255,255,255,.15); overflow: hidden; margin: 10px 0 6px; max-width: 420px; }
+.tdb-hero .xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #f2c14e, #ffdf8a); border-radius: 12px; transition: width .8s; }
+.tdb-hero small { opacity: .8; }
+.blason { width: 120px; height: 120px; border-radius: 30px; display: grid; place-items: center; text-align: center; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
+.blason b { font: 400 44px/1 var(--f-display); color: #f2c14e; display: block; }
+.blason span { font: 500 11px/1.2 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+.grille-tdb { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; }
+.boite { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+.boite h2 { font: 400 22px/1.2 var(--f-display); margin: 4px 0 14px; }
+.quete { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--soft); text-decoration: none; color: var(--ink); margin-bottom: 8px; }
+.quete .coche { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; flex: none; font-weight: 700; }
+.quete.faite .coche { background: var(--up); border-color: var(--up); color: #fff; }
+.quete.faite span { text-decoration: line-through; color: var(--muted); }
+.quete small { margin-left: auto; font: 600 12px/1 var(--f-mono); color: var(--gold); white-space: nowrap; }
+.coffre { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px; border-radius: 14px; border: 1px dashed var(--line); }
+.coffre .ico { font-size: 30px; filter: grayscale(1); opacity: .6; transition: .3s; }
+.coffre.ouvert { border-style: solid; border-color: var(--gold); background: var(--gold-soft); }
+.coffre.ouvert .ico { filter: none; opacity: 1; animation: rebond 1s ease infinite alternate; }
+@keyframes rebond { to { transform: translateY(-4px) rotate(-6deg); } }
+.serie-grande { display: flex; align-items: center; gap: 14px; }
+.serie-grande b { font: 400 52px/1 var(--f-display); color: var(--flame); }
+.semaine-tdb { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+.semaine-tdb i { font-style: normal; text-align: center; padding: 8px 0; border-radius: 10px; background: var(--soft); font: 500 12px/1.4 var(--f-mono); color: var(--muted); }
+.semaine-tdb i.ok { background: color-mix(in srgb, var(--flame) 20%, var(--surface)); color: var(--flame); }
+.semaine-tdb i.auj { outline: 2px solid var(--flame); }
+.continuer { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none; color: #f6f1e4; margin-bottom: 10px; }
+.continuer[data-c="finance"] { background: #123d33; } .continuer[data-c="trading"] { background: #141c3a; } .continuer[data-c="perso"] { background: #3d1630; }
+.continuer svg.anneau-mini { width: 54px; height: 54px; flex: none; transform: rotate(-90deg); }
+.continuer div { min-width: 0; } .continuer b { display: block; font-weight: 600; } .continuer span { font-size: 13px; opacity: .8; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.continuer em { margin-left: auto; font-style: normal; font-weight: 700; color: #f2c14e; }
+.stats-tdb { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); gap: 12px; }
+.stats-tdb div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.stats-tdb b { font: 400 30px/1.1 var(--f-display); display: block; }
+.stats-tdb small { color: var(--muted); }
+.trophees { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.trophees .t { text-align: center; padding: 14px 8px; border-radius: 14px; background: var(--soft); }
+.trophees .t .ico { width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #1d1606; }
+.trophees .t .ico svg { width: 22px; height: 22px; }
+.trophees .t.verrou { opacity: .45; } .trophees .t.verrou .ico { background: var(--line); color: var(--muted); }
+.trophees .t b { display: block; font-size: 13px; } .trophees .t small { color: var(--muted); font-size: 11px; line-height: 1.3; display: block; }
+.page-ia { text-align: center; padding: clamp(40px, 10vw, 90px) 16px; max-width: 34rem; margin: 0 auto; }
+.page-ia .bulle { width: 88px; height: 88px; border-radius: 28px; margin: 0 auto 18px; display: grid; place-items: center; background: linear-gradient(135deg, #f2c14e, #e3a1c8); color: #1d1606; }
+.page-ia .bulle svg { width: 42px; height: 42px; }
+.page-ia h1 { font: 400 clamp(28px, 5vw, 40px)/1.1 var(--f-display); margin: 8px 0 12px; }
+.page-ia p { color: var(--muted); line-height: 1.6; }
+@media (max-width: 640px) { .tdb-hero { grid-template-columns: 1fr; } .blason { display: none; } }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
@@ -354,6 +445,15 @@ article.cours hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0 
 </head>
 <body>
 <div class="progression-lecture" id="barre-lecture"></div>
+<nav class="side" id="side" aria-label="Navigation">
+  <a class="marque" href="#accueil"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#123d33"/><circle cx="32" cy="32" r="16" fill="none" stroke="#e8c36a" stroke-width="2"/><circle cx="32" cy="32" r="5" fill="#e8c36a"/></svg><span>Rosace</span></a>
+  <a class="nav" href="#accueil" data-nav="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Tableau de bord</a>
+  <a class="nav" href="#cours" data-nav="cours"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 7h6"/></svg>Cours</a>
+  <div class="sous" id="side-cours"></div>
+  <a class="nav" href="#ia" data-nav="ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Assistant IA<span class="bientot-tag">Bientôt</span></a>
+  <div class="bas" id="side-bas"></div>
+</nav>
+
 <header class="top">
   <div class="in">
     <a class="marque" href="#" id="lien-accueil" aria-label="Accueil">
@@ -374,7 +474,9 @@ article.cours hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0 
 </header>
 
 <div class="wrap">
-  <main id="portail" class="vue portail" hidden></main>
+  <main id="portail" class="vue" hidden></main>
+  <main id="catalogue" class="vue portail" hidden></main>
+  <main id="page-ia" class="vue" hidden></main>
   <main id="accueil" class="vue"><div class="chargement">Chargement du cours…</div></main>
   <main id="lecture" class="vue" hidden></main>
 </div>
@@ -623,17 +725,22 @@ const estLue = (n, c = coursActif) => !!etat.lues[c][n];
    ========================================================= */
 function badges() {
   const lf = LES_COURS.reduce((a, c) => a + Object.keys(etat.lues[c]).length, 0), lt = 0, s = serie();
+  const coursCommences = LES_COURS.filter(c => Object.keys(etat.lues[c]).length).length;
+  const recapsLus = LES_COURS.reduce((a, c) => a + Object.keys(etat.lues[c]).filter(k => Number(k) > RECAP).length, 0);
   const quizParfaits = LES_COURS.flatMap(c => Object.values(etat.quiz[c])).filter(q => q.total && q.bons === q.total).length;
   const questions = Object.values(etat.questions).reduce((a, b) => a + b, 0);
   return [
     { ok: lf + lt >= 1, ico: ICO.livre, t: "Premier pas", d: "Finir une leçon" },
     { ok: s >= 3, ico: ICO.flamme, t: "3 jours d'affilée", d: "Étudier 3 jours de suite" },
-    { ok: questions >= 1, ico: ICO.prof, t: "Curieux·se", d: "Poser une question au prof" },
+    { ok: questions >= 1, ico: ICO.prof, t: "Curieux·se", d: "Bientôt, avec l’assistant IA" },
     { ok: quizParfaits >= 1, ico: ICO.cible, t: "Sans faute", d: "Un quiz à 100 %" },
-    { ok: lf >= 1 && lt >= 1, ico: ICO.exemple, t: "Double casquette", d: "Une leçon dans chaque cours" },
+    { ok: coursCommences >= 2, ico: ICO.exemple, t: "Double casquette", d: "Une leçon dans deux cours" },
+    { ok: coursCommences >= 3, ico: ICO.etoile, t: "Touche-à-tout", d: "Une leçon dans les trois cours" },
+    { ok: recapsLus >= 1, ico: ICO.fiche, t: "Module bouclé", d: "Lire un récap de module" },
     { ok: s >= 7, ico: ICO.flamme, t: "Semaine parfaite", d: "7 jours d'affilée" },
     { ok: lf + lt >= 10, ico: ICO.medaille, t: "10 leçons", d: "Finir 10 leçons" },
-    { ok: quizParfaits >= 5, ico: ICO.etoile, t: "Machine à quiz", d: "5 quiz à 100 %" }
+    { ok: lf >= 40, ico: ICO.medaille, t: "40 leçons", d: "L'équivalent d'un cours entier" },
+    { ok: s >= 30, ico: ICO.flamme, t: "Inarrêtable", d: "30 jours d'affilée" }
   ];
 }
 function accueil() {
@@ -673,7 +780,7 @@ function accueil() {
     <section class="hero">
       <canvas id="deco" aria-hidden="true"></canvas>
       <div>
-        <a class="tous-cours" href="#accueil">← Tous les cours</a>
+        <a class="tous-cours" href="#cours">← Tous les cours</a>
         <div class="salut">${salut} 👋</div>
         <h1>${esc(c.titre).replace("\n", "<br>")}</h1>
         <p>${esc(c.accroche)}</p>
@@ -1114,41 +1221,118 @@ async function changerCours(c) {
 document.querySelectorAll(".switch button").forEach(b => b.onclick = () => { location.hash = "#" + b.dataset.cours; });
 $("lien-accueil").onclick = e => { e.preventDefault(); location.hash = "#accueil"; };
 
-function portail() {
+function meilleureSerie() {
+  const jours = [...new Set(etat.jours)].sort(); let best = 0, cur = 0, prev = null;
+  for (const j of jours) { const d = new Date(j + "T12:00:00"); cur = prev && (d - prev) / 864e5 === 1 ? cur + 1 : 1; best = Math.max(best, cur); prev = d; }
+  return best;
+}
+function prochaine(c) { const d = DATA[c]; return d ? (d.dispo.find(x => !estLue(x, c)) || null) : null; }
+function titreCours(c, n) { const d = DATA[c]; if (d.lecons[n] && d.lecons[n].titre) return d.lecons[n].titre; for (const m of d.modules) for (const l of m.lecons) if (l.n === n) return l.titre; return "Leçon " + n; }
+function lienCours(c, n) { return "#" + c + "/" + (n > RECAP ? "recap-" + (n - RECAP) : "lecon-" + pad(n)); }
+function pctCours(c) { const d = DATA[c]; return d ? Math.round(d.dispo.filter(x => estLue(x, c)).length / d.total * 100) : 0; }
+const COULEUR_COURS = { finance: "#2c8a72", trading: "#5b7be0", perso: "#c0679c" };
+
+function majSide(vue) {
+  document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue));
+  $("side-cours").innerHTML = LES_COURS.map(c => `<a href="#${c}" class="${vue === "cours-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${pctCours(c)}%</small></a>`).join("");
+  const xp = xpTotal(), niv = niveau(xp), pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
+  $("side-bas").innerHTML = `<div class="mini-niv"><small>Niveau ${niv.rang}</small><b>${esc(niv.nom)}</b><div class="mini-barre"><i style="width:${pc}%"></i></div><small>${xp} XP · 🔥 ${serie()} jour${serie() > 1 ? "s" : ""}</small></div>`;
+}
+
+function catalogue() {
   const cartes = LES_COURS.map(c => {
-    const d = DATA[c], C = COURS[c], lues = d ? d.dispo.filter(x => estLue(x, c)).length : 0, total = d ? d.total : 48;
-    const pct = Math.round(lues / total * 100);
+    const d = DATA[c], C = COURS[c], lues = d ? d.dispo.filter(x => estLue(x, c)).length : 0, total = d ? d.total : 48, pct = Math.round(lues / total * 100);
     return `<a class="carte" data-c="${c}" href="#${c}">
       <div class="eyebrow">${total - 8} leçons · 8 récaps</div>
       <h2>${esc(C.nom)}</h2>
       <p>${esc(C.accroche)}</p>
       ${lues ? `<div class="jauge-c"><i style="width:${pct}%"></i></div><small>${pct} % terminé</small>` : ""}
       <span class="go">${lues ? "Continuer" : "Commencer"} →</span></a>`; }).join("");
-  $("portail").innerHTML = `
-    <section class="portail-hero">
-      <div class="eyebrow">Rosace</div>
-      <h1>Comprends l'argent, une leçon par jour</h1>
-      <p>Finance d'entreprise, trading et finances personnelles. Des leçons claires de quinze minutes, avec des exemples chiffrés et un exercice corrigé à chaque fois.</p>
-    </section>
+  $("catalogue").innerHTML = `
+    <section class="portail-hero"><div class="eyebrow">Cours</div><h1>Choisis ton cours</h1>
+      <p>Une leçon de quinze minutes par jour, un exercice corrigé à chaque fois et un récap à la fin de chaque module.</p></section>
     <section class="cartes">${cartes}</section>
-    <section class="etapes">
-      <div class="etape"><div class="eyebrow">1</div><b>Une leçon chaque matin</b><span>La première s'ouvre dès ton arrivée, puis une nouvelle chaque jour à 8h. Tu avances à ton rythme.</span></div>
-      <div class="etape"><div class="eyebrow">2</div><b>Un exercice corrigé</b><span>Chaque leçon se termine par des questions et leur corrigé détaillé pour vérifier que tout est clair.</span></div>
-      <div class="etape"><div class="eyebrow">3</div><b>Un récap par module</b><span>À la fin de chaque module, une leçon reprend tout ce que tu as vu, avec un exercice de synthèse.</span></div>
-    </section>
     <p class="note">Des cours pour comprendre, pas des conseils en investissement.</p>`;
+}
+
+function pageIA() {
+  $("page-ia").innerHTML = `<section class="page-ia"><div class="bulle">${ICO.prof}</div><div class="eyebrow">Bientôt</div>
+    <h1>Ton assistant IA arrive</h1>
+    <p>Bientôt, tu pourras poser tes questions sur chaque leçon, demander une explication plus simple, un exemple ou un quiz éclair, directement ici.</p>
+    <p><a class="btn" href="#accueil">Retour au tableau de bord</a></p></section>`;
+}
+
+function portail() {
+  const xp = xpTotal(), niv = niveau(xp), s = serie(), auj = jourISO();
+  const pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
+  const heure = new Date().getHours(), salut = heure < 12 ? "Bonjour" : heure < 18 ? "Bon après-midi" : "Bonsoir";
+  const commences = LES_COURS.filter(c => Object.keys(etat.lues[c]).length);
+  const pourQuetes = commences.length ? commences : [LES_COURS[0]];
+  const quetes = pourQuetes.map(c => {
+    const fait = Object.values(etat.lues[c]).includes(auj), n = prochaine(c);
+    return { fait, lien: n ? lienCours(c, n) : "#" + c, t: fait ? `Leçon du jour lue en ${COURS[c].nom}` : `Lire ta leçon du jour en ${COURS[c].nom}`, xp: 20 };
+  });
+  quetes.push({ fait: etat.jours.includes(auj), lien: quetes[0].lien, t: "Garder ta série en vie", xp: 0, flamme: true });
+  const faites = quetes.filter(q => q.fait).length, toutes = faites === quetes.length;
+
+  const lundi = new Date(); lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7));
+  const sem = ["L", "M", "M", "J", "V", "S", "D"].map((l, i) => { const x = new Date(lundi); x.setDate(lundi.getDate() + i); const j = jourISO(x);
+    return `<i class="${etat.jours.includes(j) ? "ok" : ""} ${j === auj ? "auj" : ""}">${l}<br>${etat.jours.includes(j) ? "🔥" : "·"}</i>`; }).join("");
+
+  const R = 22, C = 2 * Math.PI * R;
+  const cont = LES_COURS.map(c => {
+    const d = DATA[c]; if (!d) return "";
+    const n = prochaine(c), p = pctCours(c), dispo = !!n;
+    const sousTitre = dispo ? (n > RECAP ? "Récap du module " + (n - RECAP) : "Leçon " + n) + " · " + titreCours(c, n) : "À jour ! Prochaine leçon demain à 8h";
+    return `<a class="continuer" data-c="${c}" href="${dispo ? lienCours(c, n) : "#" + c}">
+      <svg class="anneau-mini" viewBox="0 0 54 54"><circle cx="27" cy="27" r="${R}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="6"/><circle cx="27" cy="27" r="${R}" fill="none" stroke="#f2c14e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p / 100)}"/></svg>
+      <div><b>${esc(COURS[c].nom)} · ${p}%</b><span>${esc(sousTitre)}</span></div><em>${dispo ? "▶" : "✓"}</em></a>`; }).join("");
+
+  const totalLues = LES_COURS.reduce((a, c) => a + Object.keys(etat.lues[c]).length, 0);
+  const bs = badges(), obtenus = bs.filter(b => b.ok).length;
+  $("portail").innerHTML = `<div class="tdb">
+    <section class="tdb-hero">
+      <div><div class="eyebrow">${salut} 👋 · Niveau ${niv.rang}</div>
+        <h1>${esc(niv.nom)}</h1>
+        <div class="xpbar"><i style="width:${pc}%"></i></div>
+        <small>${xp} XP${niv.suivant ? ` · encore ${niv.suivant - xp} XP pour devenir « ${esc(niv.nomSuivant)} »` : " · niveau maximum atteint 👑"}</small></div>
+      <div class="blason"><div><b>${niv.rang}</b><span>Niveau</span></div></div>
+    </section>
+    <div class="grille-tdb">
+      <section class="boite"><div class="eyebrow">Quêtes du jour · ${faites}/${quetes.length}</div><h2>Ta mission d'aujourd'hui</h2>
+        ${quetes.map(q => `<a class="quete ${q.fait ? "faite" : ""}" href="${q.lien}"><span class="coche">${q.fait ? "✓" : ""}</span><span>${esc(q.t)}</span><small>${q.flamme ? "🔥" : "+" + q.xp + " XP"}</small></a>`).join("")}
+        <div class="coffre ${toutes ? "ouvert" : ""}"><span class="ico">🎁</span><div><b>${toutes ? "Coffre du jour ouvert !" : "Coffre du jour"}</b><br><small>${toutes ? "Bravo, toutes tes quêtes sont faites. Reviens demain pour le prochain." : "Termine toutes les quêtes pour l'ouvrir."}</small></div></div>
+      </section>
+      <section class="boite"><div class="eyebrow">Série</div><h2>Ne casse pas la chaîne</h2>
+        <div class="serie-grande"><b>${s}</b><div>jour${s > 1 ? "s" : ""} d'affilée<br><small style="color:var(--muted)">Record : ${meilleureSerie()} jour${meilleureSerie() > 1 ? "s" : ""}</small></div></div>
+        <div class="semaine-tdb">${sem}</div>
+      </section>
+    </div>
+    <section class="boite"><div class="eyebrow">Reprendre</div><h2>Tes cours</h2>${cont}</section>
+    <section class="stats-tdb">
+      <div><b>${totalLues}</b><small>leçons terminées</small></div>
+      <div><b>${xp}</b><small>XP gagnés</small></div>
+      <div><b>${obtenus}/${bs.length}</b><small>trophées</small></div>
+      <div><b>${commences.length}/${LES_COURS.length}</b><small>cours commencés</small></div>
+    </section>
+    <section class="boite"><div class="eyebrow">Trophées · ${obtenus}/${bs.length}</div><h2>Ta vitrine</h2>
+      <div class="trophees">${bs.map(b => `<div class="t ${b.ok ? "" : "verrou"}"><div class="ico">${b.ok ? b.ico : ICO.cadenas}</div><b>${esc(b.t)}</b><small>${esc(b.d)}</small></div>`).join("")}</div>
+    </section>
+  </div>`;
 }
 async function route() {
   let h = location.hash.replace(/^#/, "");
-  const surPortail = h === "" || h === "accueil";
-  document.body.classList.toggle("sur-portail", surPortail);
-  if (surPortail) {
+  const VUES = { "": "portail", accueil: "portail", cours: "catalogue", ia: "page-ia" };
+  const vue = VUES[h];
+  document.body.classList.toggle("sur-portail", !!vue);
+  for (const id of ["portail", "catalogue", "page-ia"]) $(id).hidden = id !== vue;
+  if (vue) {
     await Promise.all(LES_COURS.map(c => charger(c).catch(() => {})));
-    $("portail").hidden = false; $("accueil").hidden = true; $("lecture").hidden = true; leconCourante = 0;
+    $("accueil").hidden = true; $("lecture").hidden = true; leconCourante = 0;
     if (!$("prof").hidden) fermerProf();
-    portail(); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
+    ({ portail, catalogue, "page-ia": pageIA })[vue]();
+    majSide(h === "cours" ? "cours" : h === "ia" ? "ia" : "accueil"); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
   }
-  $("portail").hidden = true;
   h = h.replace(/\/recap-(\d+)$/, (x, m) => "/lecon-" + (RECAP + Number(m)));
   let mm = h.match(/^(finance|trading|perso)(?:\/lecon-(\d+))?$/) || h.match(/^lecon-(\d+)$/) && [null, coursActif, h.match(/^lecon-(\d+)$/)[1]];
   const c = mm && mm[1] ? mm[1] : coursActif;
@@ -1160,10 +1344,10 @@ async function route() {
   if (!$("prof").hidden) fermerProf();
   ok ? lecture(n) : accueil();
   $("expliquer").hidden = true;
-  majSwitch(); majProf(); barreLecture();
+  majSide("cours-ouvert"); majSwitch(); majProf(); barreLecture();
   if (h.endsWith("programme")) document.getElementById("programme")?.scrollIntoView(); else scrollTo(0, 0);
 }
-function rafraichir() { if (!$("portail").hidden) portail(); else if (leconCourante) lecture(leconCourante); else accueil(); majSwitch(); }
+function rafraichir() { if (!$("portail").hidden) { portail(); majSide("accueil"); } else if (leconCourante) lecture(leconCourante); else accueil(); majSwitch(); }
 addEventListener("hashchange", route);
 addEventListener("resize", () => { clearTimeout(window._rz); window._rz = setTimeout(deco, 150); });
 if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", deco);
