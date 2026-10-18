@@ -96,6 +96,8 @@ window.CONFIG = {
 .etape span { color: var(--muted); line-height: 1.5; }
 .portail .note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 32px; }
 body.sur-portail .switch { visibility: hidden; }
+.tous-cours { display: inline-block; color: var(--hero-ink); opacity: .75; text-decoration: none; font-size: 14px; margin-bottom: 10px; }
+.tous-cours:hover { opacity: 1; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
@@ -671,6 +673,7 @@ function accueil() {
     <section class="hero">
       <canvas id="deco" aria-hidden="true"></canvas>
       <div>
+        <a class="tous-cours" href="#accueil">← Tous les cours</a>
         <div class="salut">${salut} 👋</div>
         <h1>${esc(c.titre).replace("\n", "<br>")}</h1>
         <p>${esc(c.accroche)}</p>
@@ -1172,6 +1175,8 @@ document.documentElement.dataset.cours = coursActif;
 appliquerTheme();
 (async () => {
   try { if (!SB && window.claude && window.claude.use) sample = await window.claude.use("sample"); } catch (e) { sample = null; }
+  // À l'ouverture du site, une adresse qui ne vise qu'un cours (#finance, favori enregistré…) mène à la page d'accueil
+  if (/^#(finance|trading|perso)\/?$/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
   await route();
   LES_COURS.filter(c => c !== coursActif).forEach(c => charger(c).then(majSwitch).catch(() => {}));
   if (await syncRecevoir()) rafraichir();
