@@ -161,6 +161,11 @@ body.sur-portail .switch { visibility: hidden; }
 .coffre .ico { font-size: 30px; filter: grayscale(1); opacity: .6; transition: .3s; }
 .coffre.ouvert { border-style: solid; border-color: var(--gold); background: var(--gold-soft); }
 .coffre.ouvert .ico { filter: none; opacity: 1; animation: rebond 1s ease infinite alternate; }
+button.coffre { width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.coffre:hover { transform: translateY(-1px); }
+.coffre.vide { align-items: flex-start; }
+.coffre.vide .ico { animation: none; }
+.coffre .anecdote { margin: 6px 0 8px; line-height: 1.5; }
 @keyframes rebond { to { transform: translateY(-4px) rotate(-6deg); } }
 .serie-grande { display: flex; align-items: center; gap: 14px; }
 .serie-grande b { font: 400 52px/1 var(--f-display); color: var(--flame); }
@@ -656,6 +661,7 @@ function xpTotal() {
     for (const q of Object.values(etat.quiz[c])) xp += (q.bons || 0) * 5;
   }
   xp += Object.values(etat.questions).reduce((s, v) => s + Math.min(v, 5), 0) * 2;
+  xp += Object.values(etat.coffres || {}).reduce((s, v) => s + v, 0);
   return xp;
 }
 function niveau(xp) {
@@ -1262,6 +1268,66 @@ function pageIA() {
     <p><a class="btn" href="#accueil">Retour au tableau de bord</a></p></section>`;
 }
 
+const ANECDOTES = [
+"Les premiers billets de banque sont apparus en Chine, sous la dynastie Song, vers l'an 1000. Les marchands en avaient assez de transporter des pièces de fer, trop lourdes.",
+"Le mot « salaire » vient du latin salarium, lié au sel. Le sel était si précieux dans l'Antiquité qu'il servait de monnaie d'échange.",
+"En 1637, aux Pays-Bas, certains bulbes de tulipe se sont vendus plus cher qu'une maison. Puis les prix se sont effondrés en quelques semaines : c'est l'une des premières bulles spéculatives connues.",
+"La Bourse de Paris a longtemps fonctionné « à la criée » : les agents de change hurlaient leurs ordres autour d'une corbeille, au palais Brongniart. La cotation est devenue électronique dans les années 1980.",
+"Le 19 octobre 1987, le « lundi noir », l'indice Dow Jones a perdu environ 22 % en une seule journée. C'est encore aujourd'hui sa pire baisse en un jour.",
+"Warren Buffett a acheté sa première action à 11 ans. Il dit souvent qu'il regrette d'avoir commencé si tard.",
+"Le symbole € a été dessiné en s'inspirant de la lettre grecque epsilon, clin d'œil à l'Europe, avec deux traits parallèles pour évoquer la stabilité.",
+"Les pièces et billets en euros sont entrés dans les poches des Européens le 1er janvier 2002. L'euro existait déjà depuis 1999, mais seulement sur les comptes.",
+"Le Livret A a été créé en 1818, juste après les guerres napoléoniennes, pour encourager les Français modestes à épargner.",
+"En 2010, un programmeur a payé 10 000 bitcoins pour deux pizzas. Le 22 mai est depuis surnommé le « Bitcoin Pizza Day ».",
+"Albert Einstein aurait dit que les intérêts composés sont la huitième merveille du monde. En réalité, personne n'a jamais retrouvé la source de cette citation !",
+"La règle de 72 permet d'estimer en combien d'années un placement double : on divise 72 par le taux. À 6 % par an, il faut environ 12 ans.",
+"Le premier distributeur automatique de billets a été installé à Londres en 1967, devant une agence de la banque Barclays.",
+"La carte bancaire à puce est une invention française : Roland Moreno a déposé le brevet de la carte à puce en 1974.",
+"Sur l'île de Yap, en Micronésie, on utilisait d'énormes pierres trouées comme monnaie. Certaines ne bougeaient jamais : tout le monde savait simplement à qui elles appartenaient.",
+"La Compagnie néerlandaise des Indes orientales, créée en 1602, est souvent considérée comme la première société à avoir émis des actions échangées en Bourse.",
+"Le taureau symbolise la hausse en Bourse (il frappe de bas en haut avec ses cornes) et l'ours la baisse (il frappe de haut en bas avec ses pattes).",
+"Le célèbre taureau en bronze de Wall Street, le « Charging Bull », a été installé sans autorisation par l'artiste Arturo Di Modica en 1989. La ville a fini par le garder.",
+"En 1720, la « bulle des mers du Sud » a ruiné de nombreux investisseurs anglais. Isaac Newton y aurait perdu une fortune et dit : « Je peux calculer le mouvement des astres, mais pas la folie des hommes. »",
+"À Paris en 1720, le système de John Law, avec ses billets de papier, s'est effondré. La France s'est longtemps méfiée du papier-monnaie à cause de cet épisode.",
+"Le premier indice boursier, le Dow Jones, a été publié en 1896. Il ne comptait alors que 12 entreprises.",
+"Le CAC 40 a démarré le 31 décembre 1987 avec une valeur de base de 1 000 points.",
+"Les cartes de fidélité modernes ont un ancêtre : au XIXe siècle, des commerçants américains distribuaient des timbres à collectionner contre des cadeaux.",
+"Le mot « banque » vient de l'italien banca, le banc ou la table sur laquelle les changeurs de monnaie travaillaient dans les marchés de la Renaissance.",
+"Faire « banqueroute » viendrait de banca rotta, le banc cassé : quand un changeur ne pouvait plus payer, on brisait son banc.",
+"Le plus vieux budget connu ? Des tablettes d'argile de Mésopotamie, vieilles de plus de 4 000 ans, notent déjà des dettes, des prêts et des intérêts.",
+"La première pièce de monnaie connue a été frappée en Lydie (dans l'actuelle Turquie) vers le VIIe siècle avant notre ère, dans un alliage d'or et d'argent appelé électrum.",
+"Le dollar tire son nom du thaler, une pièce d'argent frappée en Bohême au XVIe siècle.",
+"Jusqu'en 1971, le dollar américain était convertible en or. Cette année-là, le président Nixon a mis fin à cette convertibilité.",
+"Les ETF, ces fonds qui copient un indice, sont nés au début des années 1990. Le tout premier grand succès, le SPDR qui suit le S&P 500, a été lancé en 1993.",
+"John Bogle a lancé en 1976 le premier fonds indiciel pour particuliers. On s'est moqué de lui à l'époque : on l'appelait « la folie de Bogle ».",
+"Le PEA, plan d'épargne en actions, a été créé en France en 1992 pour encourager les particuliers à investir dans les entreprises européennes.",
+"Le mot « chèque » viendrait de l'anglais check, contrôle. En France, son usage recule fortement depuis l'arrivée de la carte et du virement instantané.",
+"Le krach de 1929 a commencé le jeudi 24 octobre, le « jeudi noir ». Il a été suivi de la Grande Dépression, qui a duré des années.",
+"Dans l'Antiquité romaine, le temple de Junon Moneta abritait l'atelier où l'on frappait les pièces. C'est de là que vient le mot « monnaie ».",
+"Le Monopoly s'inspire d'un jeu créé en 1904 par Elizabeth Magie, The Landlord's Game, pensé à l'origine pour montrer les dangers de l'accumulation des terres.",
+"Le mot « capital » vient du latin caput, la tête : on comptait autrefois la richesse en têtes de bétail.",
+"En 2008, la faillite de la banque Lehman Brothers, le 15 septembre, a déclenché la plus grave crise financière depuis 1929.",
+"Le mot « budget » vient du vieux français bougette, une petite bourse en cuir que l'on portait à la ceinture.",
+"Le premier billet de banque en Europe a été émis en Suède en 1661, par la banque Stockholms Banco."
+];
+function coffreDuJour(auj) { return (etat.coffres || {})[auj]; }
+document.addEventListener("click", e => { if (e.target.closest("#ouvrir-coffre")) ouvrirCoffre(); });
+function ouvrirCoffre() {
+  const auj = jourISO(); etat.coffres = etat.coffres || {};
+  if (etat.coffres[auj]) return;
+  etat.coffres[auj] = 20 + 10 * Math.floor(Math.random() * 4); // 20, 30, 40 ou 50 XP
+  sauver(); celebrer("+" + etat.coffres[auj] + " XP", "Coffre ouvert !"); portail(); majSide("accueil");
+}
+function anecdoteDuJour(auj) {
+  const n = Math.round(new Date(auj + "T12:00:00") / 864e5);
+  return ANECDOTES[((n % ANECDOTES.length) + ANECDOTES.length) % ANECDOTES.length];
+}
+function coffreHTML(toutes, auj) {
+  const gain = coffreDuJour(auj);
+  if (gain) return `<div class="coffre ouvert vide"><span class="ico">🎁</span><div><b>+${gain} XP gagnés aujourd'hui</b><br><small>Anecdote du jour</small><p class="anecdote">${esc(anecdoteDuJour(auj))}</p><small>Reviens demain pour un nouveau coffre.</small></div></div>`;
+  if (toutes) return `<button type="button" class="coffre ouvert" id="ouvrir-coffre"><span class="ico">🎁</span><div><b>Ton coffre est prêt !</b><br><small>Touche pour l'ouvrir : des XP en bonus et une anecdote surprise.</small></div></button>`;
+  return `<div class="coffre"><span class="ico">🎁</span><div><b>Coffre du jour</b><br><small>Termine toutes les quêtes pour l'ouvrir : des XP en bonus et une anecdote surprise.</small></div></div>`;
+}
 function portail() {
   const xp = xpTotal(), niv = niveau(xp), s = serie(), auj = jourISO();
   const pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
@@ -1301,7 +1367,7 @@ function portail() {
     <div class="grille-tdb">
       <section class="boite"><div class="eyebrow">Quêtes du jour · ${faites}/${quetes.length}</div><h2>Ta mission d'aujourd'hui</h2>
         ${quetes.map(q => `<a class="quete ${q.fait ? "faite" : ""}" href="${q.lien}"><span class="coche">${q.fait ? "✓" : ""}</span><span>${esc(q.t)}</span><small>${q.flamme ? "🔥" : "+" + q.xp + " XP"}</small></a>`).join("")}
-        <div class="coffre ${toutes ? "ouvert" : ""}"><span class="ico">🎁</span><div><b>${toutes ? "Coffre du jour ouvert !" : "Coffre du jour"}</b><br><small>${toutes ? "Bravo, toutes tes quêtes sont faites. Reviens demain pour le prochain." : "Termine toutes les quêtes pour l'ouvrir."}</small></div></div>
+        ${coffreHTML(toutes, auj)}
       </section>
       <section class="boite"><div class="eyebrow">Série</div><h2>Ne casse pas la chaîne</h2>
         <div class="serie-grande"><b>${s}</b><div>jour${s > 1 ? "s" : ""} d'affilée<br><small style="color:var(--muted)">Record : ${meilleureSerie()} jour${meilleureSerie() > 1 ? "s" : ""}</small></div></div>
