@@ -482,6 +482,8 @@ a.exo-mod:hover { transform: translateY(-2px); }
   <a class="nav" href="#accueil" data-nav="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Tableau de bord</a>
   <a class="nav" href="#cours" data-nav="cours"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 7h6"/></svg>Cours</a>
   <div class="sous" id="side-cours"></div>
+  <a class="nav" href="#exercices" data-nav="exos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 17h8"/></svg>Exercices</a>
+  <div class="sous" id="side-exos" hidden></div>
   <a class="nav" href="#ia" data-nav="ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Assistant IA<span class="bientot-tag">Bientôt</span></a>
   <div class="bas" id="side-bas"></div>
 </nav>
@@ -508,6 +510,7 @@ a.exo-mod:hover { transform: translateY(-2px); }
 <div class="wrap">
   <main id="portail" class="vue" hidden></main>
   <main id="catalogue" class="vue portail" hidden></main>
+  <main id="exos-cat" class="vue portail" hidden></main>
   <main id="page-ia" class="vue" hidden></main>
   <main id="accueil" class="vue"><div class="chargement">Chargement du cours…</div></main>
   <main id="lecture" class="vue" hidden></main>
@@ -977,7 +980,7 @@ function pageExos() {
   }).join("");
   const faits = Object.keys(sc).length;
   el.innerHTML = `
-    <div class="lecon-top"><a class="back" href="#${coursActif}">← ${esc(COURS[coursActif].nom)}</a><span class="eyebrow num">${faits}/${d.modules.length} modules</span></div>
+    <div class="lecon-top"><a class="back" href="#exercices">← Tous les exercices</a><span class="eyebrow num">${faits}/${d.modules.length} modules</span></div>
     ${ongletsCours("exos")}
     <header class="lecon-head large">
       <div class="eyebrow">${esc(COURS[coursActif].nom)}</div>
@@ -1051,7 +1054,7 @@ function serieExos(m) {
     $("bilan-exos").innerHTML = `<section class="bilan-exos"><div class="eyebrow">Ton score</div><div class="big">${bons}/${total}</div><p>${msg}${gain ? ` Tu gagnes ${gain} XP.` : ""}</p>
       <div class="actions"><button class="btn ghost" type="button" id="refaire">Recommencer</button>${suivant && exosOuverts(suivant) && (exosDe(coursActif)[suivant.n] || []).length ? `<a class="btn" href="#${coursActif}/exos-${suivant.n}">Module ${suivant.n} →</a>` : `<a class="btn" href="#${coursActif}/exos">Tous les exercices</a>`}</div></section>`;
     $("refaire").onclick = () => { serieExos(m); scrollTo(0, 0); };
-    majSide("cours-ouvert");
+    majSide("exos-ouvert");
   }
 }
 function barreLecture() {
@@ -1378,10 +1381,11 @@ function pctCours(c) { const d = DATA[c]; return d ? Math.round(d.dispo.filter(x
 const COULEUR_COURS = { finance: "#2c8a72", trading: "#5b7be0", perso: "#c0679c" };
 
 function majSide(vue) {
-  const dansCours = vue === "cours" || vue === "cours-ouvert";
-  document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue || (a.dataset.nav === "cours" && dansCours)));
-  // La liste des cours ne s'affiche qu'une fois dans l'onglet Cours
-  $("side-cours").hidden = !dansCours;
+  const dansCours = vue === "cours" || vue === "cours-ouvert", dansExos = vue === "exos" || vue === "exos-ouvert";
+  document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue || (a.dataset.nav === "cours" && dansCours) || (a.dataset.nav === "exos" && dansExos)));
+  // Les listes de cours ne s'affichent qu'une fois dans l'onglet Cours ou Exercices
+  $("side-cours").hidden = !dansCours; $("side-exos").hidden = !dansExos;
+  $("side-exos").innerHTML = LES_COURS.map(c => `<a href="#${c}/exos" class="${vue === "exos-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${Object.keys(scoresExos(c)).length}/8</small></a>`).join("");
   $("side-cours").innerHTML = LES_COURS.map(c => `<a href="#${c}" class="${vue === "cours-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${pctCours(c)}%</small></a>`).join("");
   const xp = xpTotal(), niv = niveau(xp), pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
   $("side-bas").innerHTML = `<div class="mini-niv"><small>Niveau ${niv.rang}</small><b>${esc(niv.nom)}</b><div class="mini-barre"><i style="width:${pc}%"></i></div><small>${xp} XP · 🔥 ${serie()} jour${serie() > 1 ? "s" : ""}</small></div>`;
@@ -1403,6 +1407,22 @@ function catalogue() {
     <p class="note">Des cours pour comprendre, pas des conseils en investissement.</p>`;
 }
 
+function catalogueExos() {
+  const cartes = LES_COURS.map(c => {
+    const d = DATA[c], sc = scoresExos(c), faits = Object.keys(sc).length;
+    const ouverts = d ? d.modules.filter(m => d.lecons[derniereDuModule(m)] && (exosDe(c)[m.n] || []).length).length : 0;
+    const bons = Object.values(sc).reduce((a, r) => a + r.bons, 0);
+    return `<a class="carte" data-c="${c}" href="#${c}/exos">
+      <div class="eyebrow">8 modules · 8 exercices chacun</div>
+      <h2>${esc(COURS[c].nom)}</h2>
+      <p>${ouverts ? `${ouverts} série${ouverts > 1 ? "s" : ""} ouverte${ouverts > 1 ? "s" : ""} · ${faits} faite${faits > 1 ? "s" : ""}` : "La première série s'ouvre à la fin du module 1."}</p>
+      ${faits ? `<div class="jauge-c"><i style="width:${faits / 8 * 100}%"></i></div><small>${bons} bonne${bons > 1 ? "s" : ""} réponse${bons > 1 ? "s" : ""}</small>` : ""}
+      <span class="go">${faits ? "Continuer" : "Voir les exercices"} →</span></a>`; }).join("");
+  $("exos-cat").innerHTML = `
+    <section class="portail-hero"><div class="eyebrow">Exercices</div><h1>Entraîne-toi</h1>
+      <p>Des exercices corrigés pour chaque module : questions à choix, vrai ou faux et petits calculs. Chaque bonne réponse rapporte 5 XP.</p></section>
+    <section class="cartes">${cartes}</section>`;
+}
 function pageIA() {
   $("page-ia").innerHTML = `<section class="page-ia"><div class="bulle">${ICO.prof}</div><div class="eyebrow">Bientôt</div>
     <h1>Ton assistant IA arrive</h1>
@@ -1531,16 +1551,16 @@ function portail() {
 let pageExo = 0;
 async function route() {
   let h = location.hash.replace(/^#/, "");
-  const VUES = { "": "portail", accueil: "portail", cours: "catalogue", ia: "page-ia" };
+  const VUES = { "": "portail", accueil: "portail", cours: "catalogue", exercices: "exos-cat", ia: "page-ia" };
   const vue = VUES[h];
   document.body.classList.toggle("sur-portail", !!vue);
-  for (const id of ["portail", "catalogue", "page-ia"]) $(id).hidden = id !== vue;
+  for (const id of ["portail", "catalogue", "exos-cat", "page-ia"]) $(id).hidden = id !== vue;
   if (vue) {
     await Promise.all(LES_COURS.map(c => charger(c).catch(() => {})));
     $("accueil").hidden = true; $("lecture").hidden = true; leconCourante = 0;
     if (!$("prof").hidden) fermerProf();
-    ({ portail, catalogue, "page-ia": pageIA })[vue]();
-    majSide(h === "cours" ? "cours" : h === "ia" ? "ia" : "accueil"); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
+    ({ portail, catalogue, "exos-cat": catalogueExos, "page-ia": pageIA })[vue]();
+    majSide(h === "cours" ? "cours" : h === "ia" ? "ia" : h === "exercices" ? "exos" : "accueil"); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
   }
   const mx = h.match(/^(finance|trading|perso)\/exos(?:-(\d+))?$/);
   if (mx) {
@@ -1549,7 +1569,7 @@ async function route() {
     if (!$("prof").hidden) fermerProf();
     pageExo > 0 ? serieExos(pageExo) : pageExos();
     $("expliquer").hidden = true;
-    majSide("cours-ouvert"); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
+    majSide("exos-ouvert"); majSwitch(); majProf(); barreLecture(); scrollTo(0, 0); return;
   }
   pageExo = 0;
   h = h.replace(/\/recap-(\d+)$/, (x, m) => "/lecon-" + (RECAP + Number(m)));
