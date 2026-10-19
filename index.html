@@ -115,6 +115,9 @@ body.sur-portail .switch { visibility: hidden; }
 .side .sous a:hover, .side .sous a.actif { background: var(--soft); color: var(--ink); }
 .side .sous[hidden] { display: none; }
 .bientot-tag { margin-left: auto; font: 600 10px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; background: var(--gold-soft); color: var(--ink); padding: 4px 6px; border-radius: 6px; }
+.bientot-tag[hidden] { display: none; }
+.choix-ia { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.page-ia .note { color: var(--muted); font-size: 14px; }
 .side .bas { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 8px 0; border-top: 1px solid var(--line); }
 .side .mini-niv b { font: 400 16px/1.2 var(--f-display); display: block; }
 .side .mini-niv small { color: var(--muted); font-size: 12px; }
@@ -572,7 +575,7 @@ const COURS = {
     nom: "Finance", titre: "Cours de\nfinance", fichier: "data/finance.json",
     accroche: "De la valeur temps de l'argent jusqu'à l'évaluation d'entreprise. Quinze minutes par jour, un exercice corrigé à chaque leçon.",
     prof: "Ton prof de finance",
-    persona: "le prof particulier de finance d'entreprise de Sasha, étudiant·e à KEDGE Business School. Niveau : école de commerce, en partant des bases",
+    persona: "le prof particulier de finance d'entreprise du site Rosace. Niveau : école de commerce, en partant des bases",
     regles: "Utilise des exemples d'entreprises réelles quand c'est utile, en donnant les chiffres comme des ordres de grandeur.",
     exemple: "Ex. : c'est quoi la différence entre VAN et TRI ?",
     avert: ""
@@ -581,7 +584,7 @@ const COURS = {
     nom: "Trading", titre: "Cours de\ntrading", fichier: "data/trading.json",
     accroche: "Des bougies japonaises jusqu'à ta propre stratégie. Une leçon par jour, avec des exemples chiffrés sur de vrais marchés.",
     prof: "Ton prof de trading",
-    persona: "le prof particulier de trading de Sasha, étudiant·e à KEDGE Business School. Niveau : débutant à intermédiaire",
+    persona: "le prof particulier de trading du site Rosace. Niveau : débutant à intermédiaire",
     regles: "Tu n'es pas un conseiller en investissement : ne recommande jamais d'acheter ou de vendre un actif précis, et rappelle le risque quand c'est utile (la plupart des traders particuliers perdent de l'argent). Encourage l'entraînement sans argent réel.",
     exemple: "Ex. : c'est quoi le spread ?",
     avert: "Un cours pour comprendre, pas un conseil en investissement. Entraîne-toi d'abord sans argent réel (paper trading)."
@@ -590,7 +593,7 @@ const COURS = {
     nom: "Finances perso", titre: "Finances\npersonnelles", fichier: "data/perso.json",
     accroche: "Budget, banque, épargne, impôts, logement, placements, retraite : tout pour bien gérer ton argent. Une leçon par jour, des exemples concrets.",
     prof: "Ton prof de finances perso",
-    persona: "le prof particulier de finances personnelles de Sasha, étudiant·e à KEDGE Business School. Niveau : débutant",
+    persona: "le prof particulier de finances personnelles du site Rosace. Niveau : débutant",
     regles: "Tu n'es pas un conseiller financier : ne recommande jamais un produit précis, donne des ordres de grandeur pour les taux et plafonds réglementaires (ils changent) et renvoie vers impots.gouv.fr ou service-public.fr pour les chiffres en vigueur.",
     exemple: "Ex. : combien garder sur mon Livret A ?",
     avert: "Un cours pour comprendre, pas un conseil financier personnalisé. Les taux, plafonds et règles fiscales changent : vérifie toujours les chiffres en vigueur."
@@ -1117,18 +1120,18 @@ function consignes() {
   const c = COURS[coursActif], d = D(), n = leconCourante;
   const lues = d.dispo.filter(x => estLue(x));
   const faibles = Object.entries(etat.quiz[coursActif]).filter(([, q]) => q.total && q.bons / q.total < 0.67).map(([k]) => k);
-  const autre = coursActif === "finance" ? "trading" : "finance";
   const prog = d.modules.map(m => `Module ${m.n} – ${m.titre} : ` + m.lecons.map(l => `${l.n}. ${l.titre}`).join(" | ")).join("\n");
   let s = `Tu es ${c.persona}. Tu enseignes dans un site de cours en ligne (${d.total} leçons, une publiée chaque matin).
 
 COMMENT TU ENSEIGNES
-- Français, tutoiement, ton chaleureux et motivant, jamais condescendant. Tu peux appeler l'élève Sasha.
+- Français, tutoiement, ton chaleureux et motivant, jamais condescendant. Tu ne connais pas le prénom de l'élève : ne l'invente pas.
 - Pars de l'intuition, puis la notion exacte, puis un petit exemple chiffré. Vérifie tes calculs ; nombres au format français (virgule décimale, espace pour les milliers).
 - Court par défaut : 80 à 180 mots. Plus long seulement si on le demande (fiche, explication détaillée).
 - Mise en forme : paragraphes courts, listes à tirets, **gras** pour les notions clés, formules entre \`accents graves\`. Petits tableaux Markdown autorisés si ça aide à comparer. Pas de titres #.
-- Termine souvent (pas toujours) par UNE question courte pour faire réfléchir Sasha, ou une proposition de suite.
-- Exercices du cours : si Sasha demande la réponse, donne d'abord un indice et propose la solution ensuite. Si Sasha propose sa réponse, corrige-la étape par étape : dis ce qui est juste, montre précisément l'erreur, puis le bon raisonnement.
+- Termine souvent (pas toujours) par UNE question courte pour faire réfléchir l'élève, ou une proposition de suite.
+- Exercices du cours : si l'élève demande la réponse, donne d'abord un indice et propose la solution ensuite. Si l'élève propose sa réponse, corrige-la étape par étape : dis ce qui est juste, montre précisément l'erreur, puis le bon raisonnement.
 - Si une notion est vue dans une leçon future, dis laquelle. Si la question sort du sujet, réponds en une phrase et ramène vers le cours.
+- APPUIE-TOI SUR LES LEÇONS DU SITE : le texte des leçons et du récap fourni plus bas est ta référence. Reprends leurs définitions, leurs chiffres, leurs exemples et leur vocabulaire, et cite la leçon concernée (« comme on l'a vu dans la leçon 12 »). Si tes connaissances générales contredisent un chiffre du cours, signale-le simplement. Si la réponse n'est pas dans le cours, dis-le, réponds brièvement et indique la leçon la plus proche.
 - Ne prétends pas connaître l'actualité récente : les chiffres de marché sont des ordres de grandeur.
 - ${c.regles}
 
@@ -1141,13 +1144,15 @@ QUIZ : quand on te demande un quiz, écris une phrase d'introduction, puis UNIQU
 PROGRAMME
 ${prog}
 
-OÙ EN EST SASHA
+OÙ EN EST L'ÉLÈVE
 - Leçons publiées : ${d.dispo.join(", ")}. Leçons terminées : ${lues.length ? lues.join(", ") : "aucune pour l'instant"}.
 - ${faibles.length ? "Quiz ratés (à consolider) : leçons " + faibles.join(", ") + "." : "Pas de point faible repéré dans les quiz."}
-- Sasha suit aussi le cours de ${COURS[autre].nom.toLowerCase()} (${Object.keys(etat.lues[autre]).length} leçon(s) terminée(s)) : tu peux faire des liens entre les deux.
+- Autres cours du site : ${LES_COURS.filter(x => x !== coursActif).map(x => `${COURS[x].nom} (${Object.keys(etat.lues[x]).length} leçon(s) terminée(s))`).join(", ")} : tu peux faire des liens.
 `;
-  if (n) s += `\nSasha lit en ce moment la leçon ${n} « ${titreDe(n)} ». Contenu (corrigé de l'exercice compris, ne le dévoile pas sans indice préalable) :\n<lecon>\n${texteLecon(coursActif, n)}\n</lecon>\n`;
-  else s += `\nSasha est sur la page d'accueil du cours. Leçon du jour : ${d.derniere}. ${titreDe(d.derniere)}.\n`;
+  const mod = moduleDe(n || d.derniere), recap = mod ? texteLecon(coursActif, RECAP + mod.n) : "";
+  if (recap) s += `\nRécap du module ${mod.n} « ${mod.titre} » (référence) :\n<recap>\n${recap}\n</recap>\n`;
+  if (n) s += `\nL'élève lit en ce moment la leçon ${n} « ${titreDe(n)} ». Contenu (corrigé de l'exercice compris, ne le dévoile pas sans indice préalable) :\n<lecon>\n${texteLecon(coursActif, n)}\n</lecon>\n`;
+  else s += `\nL'élève est sur la page d'accueil du cours. Leçon du jour : ${d.derniere}. ${titreDe(d.derniere)}.\n`;
   return s;
 }
 
@@ -1285,7 +1290,7 @@ function majModes() {
   });
 }
 function ouvrirProf(question) {
-  if (!profDispo()) { toast("Le prof IA s'active une fois Supabase configuré."); return; }
+  if (!profDispo()) { toast("L'assistant IA arrive bientôt."); return; }
   $("prof").hidden = false; $("voile").hidden = false; $("ouvrir-prof").hidden = true;
   $("nom-prof").textContent = COURS[coursActif].prof;
   $("prof-contexte").textContent = leconCourante ? nomDe(leconCourante) + " · " + titreDe(leconCourante) : "Programme complet · " + COURS[coursActif].nom;
@@ -1384,7 +1389,8 @@ function majSide(vue) {
   const dansCours = vue === "cours" || vue === "cours-ouvert", dansExos = vue === "exos" || vue === "exos-ouvert";
   document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue || (a.dataset.nav === "cours" && dansCours) || (a.dataset.nav === "exos" && dansExos)));
   // Les listes de cours ne s'affichent qu'une fois dans l'onglet Cours ou Exercices
-  $("side-cours").hidden = !dansCours; $("side-exos").hidden = !dansExos;
+  $("side-cours").hidden = !dansCours;
+  document.querySelector(".side .bientot-tag").hidden = profDispo(); $("side-exos").hidden = !dansExos;
   $("side-exos").innerHTML = LES_COURS.map(c => `<a href="#${c}/exos" class="${vue === "exos-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${Object.keys(scoresExos(c)).length}/8</small></a>`).join("");
   $("side-cours").innerHTML = LES_COURS.map(c => `<a href="#${c}" class="${vue === "cours-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${pctCours(c)}%</small></a>`).join("");
   const xp = xpTotal(), niv = niveau(xp), pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
@@ -1424,10 +1430,19 @@ function catalogueExos() {
     <section class="cartes">${cartes}</section>`;
 }
 function pageIA() {
-  $("page-ia").innerHTML = `<section class="page-ia"><div class="bulle">${ICO.prof}</div><div class="eyebrow">Bientôt</div>
+  if (!profDispo()) {
+    $("page-ia").innerHTML = `<section class="page-ia"><div class="bulle">${ICO.prof}</div><div class="eyebrow">Bientôt</div>
     <h1>Ton assistant IA arrive</h1>
     <p>Bientôt, tu pourras poser tes questions sur chaque leçon, demander une explication plus simple, un exemple ou un quiz éclair, directement ici.</p>
     <p><a class="btn" href="#accueil">Retour au tableau de bord</a></p></section>`;
+    return;
+  }
+  $("page-ia").innerHTML = `<section class="page-ia"><div class="bulle">${ICO.prof}</div><div class="eyebrow">Assistant IA</div>
+    <h1>Pose ta question</h1>
+    <p>L'assistant connaît les leçons du site : il t'explique une notion autrement, te donne un exemple ou te fait un quiz éclair. Choisis le cours :</p>
+    <p class="choix-ia">${LES_COURS.map(c => `<button class="btn${c === coursActif ? "" : " ghost"}" type="button" data-ia="${c}">${esc(COURS[c].nom)}</button>`).join(" ")}</p>
+    <p class="note">Astuce : depuis une leçon, l'assistant connaît aussi le texte complet de la leçon que tu lis.</p></section>`;
+  $("page-ia").querySelectorAll("[data-ia]").forEach(b => b.onclick = async () => { await changerCours(b.dataset.ia); ouvrirProf(); });
 }
 
 const ANECDOTES = [
