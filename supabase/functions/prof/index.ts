@@ -14,7 +14,8 @@ const json = (corps: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ erreur: "Méthode non autorisée." }, 405);
-  const cle = Deno.env.get("GEMINI_API_KEY");
+  // trim : un espace ou un retour à la ligne collé avec la clé suffit à la faire refuser
+  const cle = (Deno.env.get("GEMINI_API_KEY") || "").trim();
   if (!cle) return json({ erreur: "La clé de l'IA n'est pas encore enregistrée sur Supabase." }, 500);
 
   let systeme = "", messages: { role: string; content: string }[] = [];
@@ -24,15 +25,26 @@ Deno.serve(async (req) => {
   systeme = systeme.slice(0, 60000);
   messages = messages.slice(-12).map((m) => ({ role: m.role === "assistant" ? "model" : "user", content: String(m.content || "").slice(0, 4000) }));
 
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELE}:streamGenerateContent?alt=sse`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": cle },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systeme }] },
-      contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
-      generationConfig: { maxOutputTokens: 1500, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
-    }),
+  const corps = JSON.stringify({
+    systemInstruction: { parts: [{ text: systeme }] },
+    contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
+    generationConfig: { maxOutputTokens: 1500, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
   });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELE}:streamGenerateContent?alt=sse`;
+  // Google propose plusieurs formats de clé (AIza…, AQ.…) : on essaie les façons de la transmettre une par une
+  const essais: [string, Record<string, string>][] = [
+    [url, { "x-goog-api-key": cle }],
+    [url + "&key=" + encodeURIComponent(cle), {}],
+    [url, { authorization: "Bearer " + cle }],
+  ];
+  let r = new Response(null, { status: 500 });
+  for (const [u, h] of essais) {
+    r = await fetch(u, { method: "POST", headers: { "content-type": "application/json", ...h }, body: corps });
+    if (r.ok || ![400, 401, 403].includes(r.status)) break;
+    const detail = await r.clone().text().catch(() => "");
+    if (!/API key|API_KEY|credential|authenticat/i.test(detail)) break;
+    console.error("Clé refusée sous cette forme, essai suivant", r.status, detail.slice(0, 200));
+  }
   if (!r.ok || !r.body) {
     const detail = await r.text().catch(() => "");
     console.error("Gemini", r.status, detail.slice(0, 500));
