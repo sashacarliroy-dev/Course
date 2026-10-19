@@ -18,8 +18,8 @@
 //  Garde bien les guillemets.
 // ============================================================
 window.CONFIG = {
-  SUPABASE_URL: "",        // ex. "https://abcdefgh.supabase.co"
-  SUPABASE_ANON_KEY: ""    // clé publique : sb_publishable_... ou anon (eyJ...)
+  SUPABASE_URL: "https://onpsmuldontynqevslps.supabase.co", // ex. "https://abcdefgh.supabase.co"
+  SUPABASE_ANON_KEY: "sb_publishable_Ufj0VnpLxUKZiBIR6aWZpQ_f4PJHeUo" // clé publique : sb_publishable_... ou anon (eyJ...)
 };
 </script>
 <style>
@@ -135,7 +135,7 @@ body.sur-portail .switch { visibility: hidden; }
   .side .marque, .side .sous, .side .bas, .side .bientot-tag { display: none; }
   .side a.nav { flex: 1; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 4px; font-size: 11px; border-radius: 12px; }
   .side a.nav.actif { background: var(--soft); color: var(--ink); }
-  .flottant { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  html .flottant { bottom: calc(80px + env(safe-area-inset-bottom)); }
   html body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
 .switch { display: none !important; }
