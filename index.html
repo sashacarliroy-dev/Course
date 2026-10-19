@@ -113,6 +113,7 @@ body.sur-portail .switch { visibility: hidden; }
 .side .sous a i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .side .sous a small { margin-left: auto; font: 500 11px/1 var(--f-mono); }
 .side .sous a:hover, .side .sous a.actif { background: var(--soft); color: var(--ink); }
+.side .sous[hidden] { display: none; }
 .bientot-tag { margin-left: auto; font: 600 10px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; background: var(--gold-soft); color: var(--ink); padding: 4px 6px; border-radius: 6px; }
 .side .bas { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 8px 0; border-top: 1px solid var(--line); }
 .side .mini-niv b { font: 400 16px/1.2 var(--f-display); display: block; }
@@ -1377,7 +1378,10 @@ function pctCours(c) { const d = DATA[c]; return d ? Math.round(d.dispo.filter(x
 const COULEUR_COURS = { finance: "#2c8a72", trading: "#5b7be0", perso: "#c0679c" };
 
 function majSide(vue) {
-  document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue));
+  const dansCours = vue === "cours" || vue === "cours-ouvert";
+  document.querySelectorAll(".side a.nav").forEach(a => a.classList.toggle("actif", a.dataset.nav === vue || (a.dataset.nav === "cours" && dansCours)));
+  // La liste des cours ne s'affiche qu'une fois dans l'onglet Cours
+  $("side-cours").hidden = !dansCours;
   $("side-cours").innerHTML = LES_COURS.map(c => `<a href="#${c}" class="${vue === "cours-ouvert" && c === coursActif ? "actif" : ""}"><i style="background:${COULEUR_COURS[c]}"></i>${esc(COURS[c].nom)}<small>${pctCours(c)}%</small></a>`).join("");
   const xp = xpTotal(), niv = niveau(xp), pc = niv.suivant ? Math.round((xp - niv.base) / (niv.suivant - niv.base) * 100) : 100;
   $("side-bas").innerHTML = `<div class="mini-niv"><small>Niveau ${niv.rang}</small><b>${esc(niv.nom)}</b><div class="mini-barre"><i style="width:${pc}%"></i></div><small>${xp} XP · 🔥 ${serie()} jour${serie() > 1 ? "s" : ""}</small></div>`;
