@@ -585,6 +585,7 @@ a.exo-mod:hover { transform: translateY(-2px); }
   <div class="boite" role="dialog" aria-labelledby="titre-reglages">
     <h2 id="titre-reglages">Réglages</h2>
     <section class="reg-section"><h3>Affichage</h3>
+      <div class="reg-ligne"><span>Langue</span><div class="seg" id="seg-langue"><button type="button" data-v="fr">Français</button><button type="button" data-v="en">English</button><button type="button" data-v="es">Español</button></div></div>
       <div class="reg-ligne"><span>Thème</span><div class="seg" id="seg-theme"><button type="button" data-t="auto">Auto</button><button type="button" data-t="light">Clair</button><button type="button" data-t="dark">Sombre</button></div></div>
       <div class="reg-ligne"><span>Taille du texte des leçons</span><div class="seg" id="seg-taille"><button type="button" data-v="normal">Normale</button><button type="button" data-v="grand">Grande</button></div></div>
       <div class="reg-ligne"><span>Confettis et animations</span><div class="seg" id="seg-anim"><button type="button" data-v="oui">Oui</button><button type="button" data-v="non">Non</button></div></div>
@@ -679,7 +680,12 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const pad = n => String(n).padStart(2, "0");
 const jourISO = (d = new Date()) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-const fmt = d => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+/* Langue de l'interface : français, anglais ou espagnol */
+const LANGUES = { fr: "Français", en: "English", es: "Español" };
+const LANGUE = (() => { const v = lire("langue", null); if (LANGUES[v]) return v; const n = (navigator.language || "fr").slice(0, 2); return LANGUES[n] ? n : "fr"; })();
+const LOCALE = { fr: "fr-FR", en: "en-GB", es: "es-ES" }[LANGUE];
+document.documentElement.lang = LANGUE;
+const fmt = d => d.toLocaleDateString(LOCALE, { day: "numeric", month: "short" });
 const lire = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const ICO = {
@@ -1074,7 +1080,7 @@ function pageFormules() {
 function derniereDuModule(mod) { return mod.lecons[mod.lecons.length - 1].n; }
 function exosOuverts(mod) { return !!D().lecons[derniereDuModule(mod)]; }
 function nombreFr(t) { return Number(String(t).replace(/\s| |€|%/g, "").replace(",", ".")); }
-function fmtNombre(x) { return Number(x).toLocaleString("fr-FR", { maximumFractionDigits: 2 }); }
+function fmtNombre(x) { return Number(x).toLocaleString(LOCALE, { maximumFractionDigits: 2 }); }
 
 function pageExos() {
   const d = D(), ex = exosDe(coursActif), sc = scoresExos(coursActif), el = $("lecture");
@@ -1228,7 +1234,7 @@ function consignes() {
   let s = `Tu es ${c.persona}. Tu enseignes dans un site de cours en ligne (${d.total} leçons, une publiée chaque matin).
 
 COMMENT TU ENSEIGNES
-- Français, tutoiement, ton chaleureux et motivant, jamais condescendant. Tu ne connais pas le prénom de l'élève : ne l'invente pas.
+- ${LANGUE === "en" ? "RÉPONDS TOUJOURS EN ANGLAIS (l'élève est anglophone), même si les leçons ci-dessous sont en français ; nombres au format anglais." : LANGUE === "es" ? "RESPONDE SIEMPRE EN ESPAÑOL (l'élève est hispanophone), même si les leçons ci-dessous sont en français ; tutoiement (tú)." : "Français, tutoiement."} Ton chaleureux et motivant, jamais condescendant. Tu ne connais pas le prénom de l'élève : ne l'invente pas.
 - Pars de l'intuition, puis la notion exacte, puis un petit exemple chiffré. Vérifie tes calculs ; nombres au format français (virgule décimale, espace pour les milliers).
 - Court par défaut : 80 à 180 mots. Plus long seulement si on le demande (fiche, explication détaillée).
 - Mise en forme : paragraphes courts, listes à tirets, **gras** pour les notions clés, formules entre \`accents graves\`. Petits tableaux Markdown autorisés si ça aide à comparer. Pas de titres #.
@@ -1844,6 +1850,54 @@ function rafraichir() { if (pageCourante === "stats" || pageCourante === "choisi
 addEventListener("hashchange", route);
 addEventListener("resize", () => { clearTimeout(window._rz); window._rz = setTimeout(deco, 150); });
 if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", deco);
+
+/* =========================================================
+   Traduction de l'interface (les leçons ont leurs propres versions)
+   Chaque texte affiché est cherché dans le dictionnaire #i18n ; {n} = nombre, {*} = texte libre.
+   ========================================================= */
+const I18N = (() => {
+  if (LANGUE === "fr") return null;
+  const el = document.getElementById("i18n"); if (!el) return null;
+  const dico = JSON.parse(el.textContent), exact = new Map(), motifs = [];
+  const echap = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  for (const [fr, tr] of Object.entries(dico)) {
+    const cible = tr[LANGUE]; if (!cible) continue;
+    if (!/\{n\}|\{\*\}/.test(fr)) { exact.set(fr, cible); continue; }
+    const morceaux = fr.split(/(\{n\}|\{\*\})/);
+    const rx = new RegExp("^" + morceaux.map(m => m === "{n}" ? "([\\d\\s\u202f\u00a0.,−-]*\\d)" : m === "{*}" ? "(.+?)" : echap(m)).join("") + "$");
+    motifs.push({ rx, cible, poids: fr.replace(/\{n\}|\{\*\}/g, "").length });
+  }
+  motifs.sort((a, b) => b.poids - a.poids); // les motifs les plus précis d'abord
+  const traduire = s => {
+    const brut = s.trim(); if (!brut) return null;
+    let r = exact.get(brut);
+    if (r === undefined) for (const m of motifs) { const x = brut.match(m.rx); if (x) { let i = 1; r = m.cible.replace(/\{n\}|\{\*\}/g, () => { const v = x[i++]; return exact.get(v) || v; }); break; } }
+    return r === undefined ? null : s.replace(brut, r);
+  };
+  return { traduire };
+})();
+const HORS_TRAD = "article.cours, #fil, .formule, .exos-liste .q, .exos-liste .expl, script, style, textarea";
+function traduireArbre(racine) {
+  if (!I18N || !racine) return;
+  if (racine.nodeType === 3) { const p = racine.parentElement; if (p && !p.closest(HORS_TRAD)) { const r = I18N.traduire(racine.nodeValue); if (r !== null && r !== racine.nodeValue) racine.nodeValue = r; } return; }
+  if (racine.nodeType !== 1 || racine.closest(HORS_TRAD)) return;
+  const w = document.createTreeWalker(racine, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement && n.parentElement.closest(HORS_TRAD) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const noeuds = []; let n; while ((n = w.nextNode())) noeuds.push(n);
+  for (const x of noeuds) { const r = I18N.traduire(x.nodeValue); if (r !== null && r !== x.nodeValue) x.nodeValue = r; }
+  for (const e of [racine, ...racine.querySelectorAll("[placeholder],[aria-label],[title]")]) for (const a of ["placeholder", "aria-label", "title"]) {
+    const v = e.getAttribute && e.getAttribute(a); if (v) { const r = I18N.traduire(v); if (r !== null && r !== v) e.setAttribute(a, r); }
+  }
+}
+if (I18N) {
+  traduireArbre(document.body);
+  new MutationObserver(ms => { for (const m of ms) { if (m.type === "characterData") traduireArbre(m.target); else m.addedNodes.forEach(traduireArbre); } })
+    .observe(document.body, { childList: true, subtree: true, characterData: true });
+  document.title = I18N.traduire(document.title) || document.title;
+}
+document.querySelectorAll("#seg-langue button").forEach(b => {
+  b.setAttribute("aria-pressed", String(b.dataset.v === LANGUE));
+  b.onclick = () => { if (b.dataset.v === LANGUE) return; ecrire("langue", b.dataset.v); location.reload(); };
+});
 
 /* =========================================================
    11. Démarrage
