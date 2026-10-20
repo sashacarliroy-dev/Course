@@ -1598,7 +1598,7 @@ function pageCompte() {
     <p>${oubli ? "Entre ton adresse email : on t'envoie un lien pour choisir un nouveau mot de passe." : "Ton compte garde ta progression sur tous tes appareils (téléphone, ordinateur)."}</p>
     <form id="form-compte">
       <input type="email" id="compte-email" class="${champ}" style="${st}" autocomplete="email" placeholder="Adresse email" required>
-      ${oubli ? "" : `<input type="password" id="compte-mdp" class="${champ}" style="${st}" autocomplete="${insc ? "new-password" : "current-password"}" placeholder="Mot de passe" required>`}
+      ${oubli ? "" : `<input type="password" id="compte-mdp" class="${champ}" style="${st}" autocomplete="current-password" placeholder="Mot de passe" required>`}
       <button class="btn" type="submit" id="compte-ok" style="margin-top:12px">${oubli ? "Envoyer le lien" : insc ? "Créer mon compte" : "Se connecter"}</button>
     </form>
     <p class="note" id="compte-msg" role="status">${esc(msgCompte)}</p>
