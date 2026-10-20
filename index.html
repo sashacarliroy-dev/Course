@@ -451,24 +451,37 @@ article.cours hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0 
 .modes svg { width: 14px; height: 14px; }
 .saisie { display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--line); align-items: flex-end; }
 .saisie textarea { flex: 1; min-width: 0; resize: none; font: 16px/1.4 var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; max-height: 140px; }
-.diapo { position: fixed; inset: 0; z-index: 200; background: #0d1512; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
-.diapo::before { content: ""; position: absolute; inset: -20%; background: radial-gradient(circle at 30% 30%, var(--c, #2c8a72) 0, transparent 55%), radial-gradient(circle at 75% 70%, #f2c14e55 0, transparent 50%); opacity: .55; animation: diapo-fond 18s ease-in-out infinite alternate; }
-@keyframes diapo-fond { to { transform: translate(6%, -4%) scale(1.15) rotate(6deg); } }
-.diapo .scene { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 6vw; }
-.diapo .slide { max-width: 900px; width: 100%; animation: slide-in .7s cubic-bezier(.2,.8,.2,1); }
-@keyframes slide-in { from { opacity: 0; transform: translateY(30px) scale(.97); } }
-.diapo .slide .sur { font: 600 13px/1 var(--f-mono, monospace); letter-spacing: .14em; text-transform: uppercase; color: #f2c14e; margin-bottom: 18px; }
-.diapo .slide h2 { font: 400 clamp(28px, 5vw, 54px)/1.1 var(--f-display); margin: 0 0 26px; }
-.diapo .slide ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-.diapo .slide li { font-size: clamp(16px, 2.2vw, 22px); line-height: 1.45; padding-left: 28px; position: relative; opacity: 0; animation: puce .6s forwards; }
-.diapo .slide li::before { content: ""; position: absolute; left: 0; top: .55em; width: 12px; height: 12px; border-radius: 50%; background: #f2c14e; }
-@keyframes puce { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
-.diapo .slide .formule-d { font: 500 clamp(18px, 2.6vw, 28px)/1.4 var(--f-mono, monospace); background: #ffffff14; border: 1px solid #ffffff2a; border-radius: 14px; padding: 16px 20px; margin-top: 18px; opacity: 0; animation: puce .6s forwards; }
-.diapo .bas-d { position: relative; display: flex; align-items: center; gap: 10px; padding: 14px 18px 18px; }
-.diapo .bas-d button { background: #ffffff1c; color: #fff; border: 0; border-radius: 999px; padding: 10px 16px; font: 600 14px var(--f-body, sans-serif); cursor: pointer; }
-.diapo .prog { flex: 1; height: 4px; background: #ffffff22; border-radius: 4px; overflow: hidden; }
-.diapo .prog i { display: block; height: 100%; background: #f2c14e; transition: width .4s; }
-.diapo .compte-d { font: 13px var(--f-mono, monospace); opacity: .7; }
+.diapo { position: fixed; inset: 0; z-index: 200; background: #fbf4ec; color: #3a2f2a; display: flex; flex-direction: column; overflow: hidden; --c: #2c8a72; }
+.diapo::before { content: ""; position: absolute; width: 60vmax; height: 60vmax; right: -20vmax; top: -25vmax; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--c) 18%, transparent), transparent 70%); animation: diapo-fond 14s ease-in-out infinite alternate; }
+.diapo::after { content: ""; position: absolute; width: 45vmax; height: 45vmax; left: -15vmax; bottom: -20vmax; border-radius: 50%; background: radial-gradient(circle, #f2c14e40, transparent 70%); animation: diapo-fond 18s ease-in-out infinite alternate-reverse; }
+@keyframes diapo-fond { to { transform: translate(-4vmax, 3vmax) scale(1.1); } }
+.diapo .scene { position: relative; z-index: 1; flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4vh 5vw; }
+.diapo .slide { width: 100%; max-width: 1150px; display: grid; grid-template-columns: 1.25fr 1fr; gap: 4vw; align-items: center; }
+.diapo .slide.seul { grid-template-columns: 1fr; text-align: center; }
+.diapo .slide .sur { display: inline-block; font: 700 12px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--c); padding: 7px 12px; border-radius: 999px; margin-bottom: 16px; animation: pop .5s both; }
+.diapo .slide h2 { font: 400 clamp(26px, 4.4vw, 52px)/1.12 var(--f-display); color: color-mix(in srgb, var(--c) 80%, #c0679c); margin: 0 0 24px; animation: slide-in .7s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes slide-in { from { opacity: 0; transform: translateY(26px); } }
+@keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+.diapo .slide ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.diapo .slide li { font-size: clamp(14px, 1.7vw, 19px); line-height: 1.45; background: #fff; border-radius: 16px; padding: 14px 16px 14px 52px; position: relative; box-shadow: 0 6px 22px #3a2f2a14; opacity: 0; animation: carte .6s cubic-bezier(.2,.8,.2,1) forwards; }
+.diapo .slide li b.n { position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--c); color: #fff; font: 700 13px/26px var(--f-body); text-align: center; }
+@keyframes carte { from { opacity: 0; transform: translateX(-22px) scale(.97); } to { opacity: 1; transform: none; } }
+.diapo .slide .formule-d { font: 600 clamp(17px, 2.3vw, 26px)/1.4 var(--f-mono); color: var(--c); background: #fff; border: 2px dashed color-mix(in srgb, var(--c) 45%, transparent); border-radius: 16px; padding: 14px 18px; margin-top: 14px; opacity: 0; animation: carte .6s forwards; }
+.diapo .illu { width: 100%; max-height: 62vh; }
+.diapo .illu .tr { stroke-dasharray: 600; stroke-dashoffset: 600; animation: trace 1.6s .4s ease forwards; }
+.diapo .illu .b { transform-box: fill-box; transform-origin: bottom; transform: scaleY(0); animation: barre .8s cubic-bezier(.2,.8,.2,1) forwards; }
+.diapo .illu .p { opacity: 0; transform-box: fill-box; transform-origin: center; animation: pop .6s cubic-bezier(.2,1.4,.4,1) forwards; }
+.diapo .illu .f { animation: flotte 3s ease-in-out infinite alternate; transform-box: fill-box; }
+@keyframes trace { to { stroke-dashoffset: 0; } }
+@keyframes barre { to { transform: scaleY(1); } }
+@keyframes flotte { from { opacity: 1; transform: none; } to { opacity: 1; transform: translateY(-8px); } }
+.diapo .illu .p.f { animation: pop .6s cubic-bezier(.2,1.4,.4,1) forwards, flotte 3s 1.6s ease-in-out infinite alternate; }
+.diapo .bas-d { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 14px 18px 18px; }
+.diapo .bas-d button { background: #fff; color: #3a2f2a; border: 0; border-radius: 999px; padding: 10px 16px; font: 600 14px var(--f-body); cursor: pointer; box-shadow: 0 3px 12px #3a2f2a18; }
+.diapo .prog { flex: 1; height: 5px; background: #3a2f2a18; border-radius: 4px; overflow: hidden; }
+.diapo .prog i { display: block; height: 100%; background: var(--c); transition: width .4s; }
+.diapo .compte-d { font: 13px var(--f-mono); opacity: .6; }
+@media (max-width: 760px) { .diapo .slide { grid-template-columns: 1fr; gap: 10px; } .diapo .illu { max-height: 26vh; order: -1; } }
 .voix-barre { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
 .cours .lu-voix { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 6px; transition: background .2s; }
 .saisie .micro { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 18px; cursor: pointer; }
@@ -1170,14 +1183,26 @@ function diapoDepuisLecon() {
     else if (e.matches(".formule, .f, pre") || /[=×÷]/.test(txt) && txt.length < 90) cur.formules.push(txt);
     else if (e.tagName === "P") cur.points.push(phrase1(txt));
   }
-  for (const sl of slides) { sl.points = sl.points.slice(0, 4); sl.formules = (sl.formules || []).slice(0, 1); }
+  for (const sl of slides) { sl.points = sl.points.slice(0, 3); sl.formules = (sl.formules || []).slice(0, 1); }
   slides.push({ sur: "Fin", titre: "Bravo, tu as vu l'essentiel !", points: ["Relis la leçon pour les détails", "Fais le quiz éclair pour vérifier"], voix: "Bravo, tu as vu l'essentiel de la leçon. Relis-la pour les détails, puis fais le quiz éclair." });
   return slides.filter(sl => sl.points.length || sl.formules && sl.formules.length || sl === slides[0] || sl.sur === "Fin");
 }
+
+/* Illustrations animées des diapos, choisies selon les mots de la diapo */
+const ILLUS = [
+  [/croiss|hausse|augment|rendement|compos|gagn|performance|progress/, c => `<svg class="illu" viewBox="0 0 320 240"><g fill="${c}">${[40, 70, 105, 145, 190].map((h, i) => `<rect class="b" x="${30 + i * 52}" y="${215 - h}" width="34" height="${h}" rx="5" opacity="${.45 + i * .12}" style="animation-delay:${.2 + i * .15}s"/>`).join("")}</g><path class="tr" d="M30 170 C110 150 170 110 290 30" fill="none" stroke="#f2c14e" stroke-width="9" stroke-linecap="round"/><path class="p" d="M272 22 L298 26 L288 50 Z" fill="#f2c14e" style="animation-delay:1.8s"/></svg>`],
+  [/baiss|perte|risque|chute|dette|crise|krach|danger|volatil/, c => `<svg class="illu" viewBox="0 0 320 240"><path class="tr" d="M20 40 L90 90 L130 70 L200 160 L240 140 L300 210" fill="none" stroke="#d9534f" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><g class="p f" style="animation-delay:1.4s"><path d="M200 30 L250 115 L150 115 Z" fill="#f2c14e"/><rect x="196" y="58" width="8" height="30" rx="3" fill="#3a2f2a"/><circle cx="200" cy="100" r="5" fill="#3a2f2a"/></g></svg>`],
+  [/taux|intér|pourcent|%|inflation/, c => `<svg class="illu" viewBox="0 0 320 240"><circle class="p" cx="160" cy="120" r="90" fill="${c}" opacity=".15"/><g class="p f" style="animation-delay:.3s"><circle cx="125" cy="85" r="22" fill="none" stroke="${c}" stroke-width="12"/><circle cx="195" cy="155" r="22" fill="none" stroke="${c}" stroke-width="12"/><path d="M200 70 L120 170" stroke="#f2c14e" stroke-width="14" stroke-linecap="round"/></g></svg>`],
+  [/argent|euro|€|prix|valeur|cash|trésor|budget|épargn|salaire|revenu|capital/, c => `<svg class="illu" viewBox="0 0 320 240">${[0, 1, 2, 3, 4].map(i => `<g class="p" style="animation-delay:${.2 + i * .18}s"><ellipse cx="${110 + (i % 2) * 14}" cy="${200 - i * 24}" rx="58" ry="16" fill="#f2c14e" stroke="#c99a2e" stroke-width="3"/></g>`).join("")}<g class="p f" style="animation-delay:1.2s"><circle cx="230" cy="90" r="52" fill="${c}"/><text x="230" y="110" text-anchor="middle" font-size="58" font-weight="700" fill="#fff">€</text></g></svg>`],
+  [/temps|année|an |durée|calendrier|date|futur|demain|mois|jour/, c => `<svg class="illu" viewBox="0 0 320 240"><circle class="p" cx="160" cy="120" r="92" fill="#fff" stroke="${c}" stroke-width="10"/><path class="tr" d="M160 120 L160 55" stroke="#3a2f2a" stroke-width="9" stroke-linecap="round"/><path class="tr" d="M160 120 L205 140" stroke="${c}" stroke-width="9" stroke-linecap="round" style="animation-delay:.9s"/><circle cx="160" cy="120" r="9" fill="#f2c14e"/></svg>`],
+  [/entreprise|société|bilan|compte|bénéfice|résultat|chiffre d'affaires|action|marché|bourse/, c => `<svg class="illu" viewBox="0 0 320 240"><g class="p" style="animation-delay:.1s"><path d="M60 210 V110 L160 50 L260 110 V210 Z" fill="#fff" stroke="${c}" stroke-width="8" stroke-linejoin="round"/></g>${[0, 1, 2].map(i => `<rect class="b" x="${95 + i * 50}" y="120" width="28" height="90" rx="4" fill="${c}" opacity=".7" style="animation-delay:${.5 + i * .2}s"/>`).join("")}<path class="tr" d="M30 214 H290" stroke="#3a2f2a" stroke-width="7" stroke-linecap="round"/></svg>`],
+];
+const ILLU_IDEE = c => `<svg class="illu" viewBox="0 0 320 240"><path class="tr" d="M30 200 C80 200 70 130 130 130" fill="none" stroke="${c}" stroke-width="16" stroke-linecap="round" opacity=".5"/><g class="p f" style="animation-delay:.6s"><circle cx="200" cy="100" r="58" fill="#f2c14e"/><rect x="180" y="150" width="40" height="34" rx="8" fill="#3a2f2a" opacity=".8"/><path d="M186 100 q14 -26 28 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>${[0, 1, 2, 3].map(i => `<path class="p" d="M${200 + Math.cos(i * 1.1 - 2.6) * 80} ${100 + Math.sin(i * 1.1 - 2.6) * 80} l${Math.cos(i * 1.1 - 2.6) * 18} ${Math.sin(i * 1.1 - 2.6) * 18}" stroke="#f2c14e" stroke-width="7" stroke-linecap="round" style="animation-delay:${1 + i * .12}s"/>`).join("")}</svg>`;
+const illustrer = (texte, c) => { const t = texte.toLowerCase(); const x = ILLUS.find(([re]) => re.test(t)); return (x ? x[1] : ILLU_IDEE)(c); };
 async function ouvrirDiapo() {
   VOIX.arreter();
   const pistes = await pistesDe(coursActif, leconCourante);
-  const slides = diapoDepuisLecon(), c = getComputedStyle($("lecture")).getPropertyValue("--c");
+  const slides = diapoDepuisLecon(), c = COULEUR_COURS[coursActif];
   const el = document.createElement("div"); el.className = "diapo"; el.style.setProperty("--c", c || "#2c8a72");
   el.innerHTML = `<div class="scene" id="scene-d"></div><div class="bas-d"><button type="button" data-a="prec">◀</button><button type="button" data-a="pause">⏸ Pause</button><button type="button" data-a="suiv">▶</button><div class="prog"><i></i></div><span class="compte-d"></span><button type="button" data-a="fermer">✕ Fermer</button></div>`;
   document.body.appendChild(el); document.body.style.overflow = "hidden";
@@ -1185,7 +1210,8 @@ async function ouvrirDiapo() {
   const montrer = () => {
     clearTimeout(minuteur); VOIX.arreter();
     const sl = slides[i];
-    el.querySelector("#scene-d").innerHTML = `<div class="slide"><div class="sur">${esc(sl.sur)}</div><h2>${esc(sl.titre)}</h2>${sl.points.length ? `<ul>${sl.points.map((p, k) => `<li style="animation-delay:${0.5 + k * 1.4}s">${puiss(esc(p))}</li>`).join("")}</ul>` : ""}${(sl.formules || []).map(f => `<div class="formule-d" style="animation-delay:${0.6 + sl.points.length * 1.4}s">${puiss(esc(f))}</div>`).join("")}</div>`;
+    const cc = el.style.getPropertyValue("--c").trim() || "#2c8a72", seul = !sl.points.length && !(sl.formules || []).length;
+    el.querySelector("#scene-d").innerHTML = `<div class="slide${seul ? " seul" : ""}"><div><div class="sur">${esc(sl.sur)}</div><h2>${esc(sl.titre)}</h2>${sl.points.length ? `<ul>${sl.points.map((p, k) => `<li style="animation-delay:${0.6 + k * 1.6}s"><b class="n">${k + 1}</b>${puiss(esc(p))}</li>`).join("")}</ul>` : ""}${(sl.formules || []).map(f => `<div class="formule-d" style="animation-delay:${0.8 + sl.points.length * 1.6}s">${puiss(esc(f))}</div>`).join("")}</div>${seul ? "" : illustrer(sl.titre + " " + sl.points.join(" "), cc)}</div>`;
     el.querySelector(".prog i").style.width = ((i + 1) / slides.length * 100) + "%"; el.querySelector(".compte-d").textContent = (i + 1) + " / " + slides.length;
     const fin = () => { if (!enPause && i < slides.length - 1) { minuteur = setTimeout(() => { i++; montrer(); }, 900); } };
     if (pistes && sl.piste != null && pistes[sl.piste]) LECTEUR.lire([pistes[sl.piste]], 0, null, fin);
