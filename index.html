@@ -1150,7 +1150,7 @@ let voixReponse = false; // la prochaine réponse de l'assistant est lue à voix
 
 /* Diapo animé avec voix de fond : construit automatiquement à partir de la leçon (une diapo par partie) */
 
-/* Pistes audio pré-enregistrées (voix naturelle Piper, fabriquées par .github/workflows/audio.yml) : audio/<cours>.json donne le nombre de pistes par leçon */
+/* Pistes audio pré-enregistrées (voix neurale, fabriquées par .github/workflows/audio.yml) : audio/<cours>.json donne le nombre de pistes par leçon */
 const PISTES = {};
 async function pistesDe(c, n) {
   if (LANGUE !== "fr") return null;

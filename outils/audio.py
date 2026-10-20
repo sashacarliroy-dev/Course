@@ -1,9 +1,9 @@
-"""Fabrique l'audio (voix naturelle, gratuite et libre : Piper) de chaque leçon, une piste par partie (titre <h2>).
-Usage : python outils/audio.py <cours> <dossier_modele>  -> écrit audio/<cours>/<lecon>/<k>.mp3 et audio/<cours>.json
+"""Fabrique l'audio (voix neurale Microsoft via edge-tts, gratuite) de chaque leçon, une piste par partie (titre <h2>).
+Usage : python outils/audio.py <cours> <voix>  (ex. fr-FR-DeniseNeural)  -> écrit audio/<cours>/<lecon>/<k>.mp3 et audio/<cours>.json
 Ne refait pas les pistes déjà présentes."""
-import html, json, os, re, subprocess, sys, wave, tempfile
+import html, json, os, re, subprocess, sys, time
 
-cours, modele = sys.argv[1], sys.argv[2]
+cours, voix = sys.argv[1], sys.argv[2]
 page = open("index.html", encoding="utf-8").read()
 d = json.loads(re.search(r'id="data-%s">(.*?)</script>' % cours, page, re.S).group(1))
 
@@ -36,9 +36,12 @@ for n, l in sorted(lecons.items(), key=lambda x: int(x[0])):
     for k, t in enumerate(ps):
         mp3 = f"{dossier}/{k}.mp3"
         if os.path.exists(mp3): continue
-        with tempfile.NamedTemporaryFile(suffix=".wav") as w:
-            subprocess.run(["piper", "--model", modele, "--output_file", w.name, "--length_scale", "1.0", "--sentence_silence", "0.25"], input=t.encode(), check=True, capture_output=True)
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", w.name, "-ac", "1", "-ar", "22050", "-b:a", "32k", mp3], check=True)
+        for essai in range(4):
+            r = subprocess.run(["edge-tts", "--voice", voix, "--rate=-4%", "--text", t, "--write-media", mp3], capture_output=True)
+            if r.returncode == 0 and os.path.getsize(mp3) > 1000: break
+            time.sleep(5 * (essai + 1))
+        else:
+            raise SystemExit(f"échec {mp3}: {r.stderr.decode()[:300]}")
     manifeste[n] = len(ps)
     print(cours, n, len(ps), "parties", flush=True)
 json.dump(manifeste, open(f"audio/{cours}.json", "w"))
