@@ -1,0 +1,54 @@
+name: Audio des leçons
+on:
+  workflow_dispatch:
+    inputs:
+      cours:
+        description: "Cours (finance, trading, perso, excel) séparés par des virgules"
+        default: "finance,trading,perso,excel"
+permissions:
+  contents: write
+jobs:
+  voix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        cours: [finance, trading, perso, excel]
+    steps:
+      - uses: actions/checkout@v4
+        if: contains(github.event.inputs.cours, matrix.cours)
+      - name: Piper et ffmpeg
+        if: contains(github.event.inputs.cours, matrix.cours)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q piper-tts
+          mkdir -p voix && cd voix
+          curl -sSL -o fr.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx
+          curl -sSL -o fr.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json
+      - name: Fabriquer l'audio
+        if: contains(github.event.inputs.cours, matrix.cours)
+        run: python outils/audio.py ${{ matrix.cours }} voix/fr.onnx
+      - uses: actions/upload-artifact@v4
+        if: contains(github.event.inputs.cours, matrix.cours)
+        with:
+          name: audio-${{ matrix.cours }}
+          path: audio/
+  publier:
+    needs: voix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: tmp-audio
+      - name: Publier sur le site
+        run: |
+          mkdir -p audio
+          for a in tmp-audio/audio-*; do [ -d "$a" ] && cp -r "$a"/. audio/; done
+          git config user.name "rosace-audio"
+          git config user.email "rosace-audio@users.noreply.github.com"
+          git add audio
+          git diff --cached --quiet || git commit -m "Audio des leçons (voix Piper)"
+          git push
