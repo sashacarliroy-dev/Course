@@ -40,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/download-artifact@v4
         with:
           path: tmp-audio
@@ -51,4 +53,4 @@ jobs:
           git config user.email "rosace-audio@users.noreply.github.com"
           git add audio
           git diff --cached --quiet || git commit -m "Audio des leçons (voix Piper)"
-          git push
+          for i in 1 2 3; do git pull --rebase -q origin main && git push && break; sleep 5; done
