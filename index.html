@@ -530,6 +530,7 @@ a.exo-mod:hover { transform: translateY(-2px); }
   <a class="nav" href="#exercices" data-nav="exos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 17h8"/></svg>Exercices</a>
   <div class="sous" id="side-exos" hidden></div>
   <a class="nav" href="#ia" data-nav="ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Assistant IA<span class="bientot-tag">Bientôt</span></a>
+  <a class="nav" href="#stats" data-nav="stats" id="nav-stats" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Stats</a>
   <div class="bas" id="side-bas"></div>
 </nav>
 
@@ -722,6 +723,7 @@ for (const c of LES_COURS) { etat.lues[c] = etat.lues[c] || {}; etat.quiz[c] = e
 if (!etat.mesCours && dejaVenu) { etat.mesCours = LES_COURS.filter(c => c !== "excel"); ecrire("etat-v1", etat); }
 // Sur l'appareil de la propriétaire (débloqué par la page #stats), tous les cours sont ouverts
 const proprio = lire("proprio", false);
+if (proprio) $("nav-stats").hidden = false;
 const mesCours = () => proprio ? LES_COURS.slice() : (etat.mesCours || []).filter(c => COURS[c] && LES_COURS.includes(c));
 const aAcces = c => mesCours().includes(c);
 let eleve = lire("eleve", null);
@@ -1522,6 +1524,7 @@ async function pageStats() {
       const r = await fetch(`${SB.url}/rest/v1/rpc/stats_admin`, { method: "POST", headers: sbHeaders(), body: JSON.stringify({ p_mdp: mdp }) });
       if (!r.ok) { formulaire(r.status === 404 ? "La base de statistiques n'est pas encore installée sur Supabase." : "Mot de passe incorrect."); return; }
       try { sessionStorage.setItem("mdp-stats", mdp); } catch (e) {}
+      $("nav-stats").hidden = false;
       if (!lire("proprio", false)) { ecrire("proprio", true); toast("Mode propriétaire activé : tous les cours sont ouverts sur cet appareil"); }
       afficherStats(await r.json());
     } catch (e) { formulaire("Impossible de joindre Supabase."); }
@@ -1805,7 +1808,7 @@ async function route() {
     choixCours(); majSide("cours"); majProf(); barreLecture(); scrollTo(0, 0); return;
   }
   pageCourante = h;
-  if (h === "stats") { await pageStats(); return; }
+  if (h === "stats") { await pageStats(); majSide("stats"); return; }
   const VUES = { "": "portail", accueil: "portail", cours: "catalogue", exercices: "exos-cat", ia: "page-ia" };
   const vue = VUES[h];
   document.body.classList.toggle("sur-portail", !!vue);
