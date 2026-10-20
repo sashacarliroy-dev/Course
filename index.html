@@ -1719,17 +1719,34 @@ const COULEUR_COURS = { finance: "#2c8a72", trading: "#5b7be0", perso: "#c0679c"
 
 // Nouveau mot de passe : champ texte masqué (Safari n'impose pas son mot de passe), bouton pour en générer un robuste
 const CHAMP_NOUVEAU_MDP = (champ, st, ph = "Mot de passe") => `<input type="text" id="compte-mdp" class="${champ}" style="${st};-webkit-text-security:disc" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" placeholder="${ph}" required>
-      <p class="note" style="margin:6px 0 0"><a href="#" id="mdp-robuste">Mot de passe robuste</a> · <a href="#" id="mdp-voir">Afficher</a></p>`;
+      <p class="note" style="margin:6px 0 0"><a href="#" id="mdp-robuste">Mot de passe robuste</a></p>`;
 document.addEventListener("click", e => {
   const a = e.target.closest("#mdp-robuste, #mdp-voir"); if (!a) return; e.preventDefault();
   const champ = $("compte-mdp"); if (!champ) return;
-  const voir = v => { champ.style.webkitTextSecurity = v ? "none" : "disc"; const b = $("mdp-voir"); if (b) b.textContent = (v ? "Masquer" : "Afficher"); };
+  const voir = v => voirMdp(champ, v);
   if (a.id === "mdp-robuste") {
     const lettres = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!?@#", r = crypto.getRandomValues(new Uint32Array(14));
     champ.value = Array.from(r, x => lettres[x % lettres.length]).join(""); voir(true);
     toast("Mot de passe créé : note-le bien");
-  } else voir(champ.style.webkitTextSecurity !== "none");
+  }
 });
+// Œil dans la case mot de passe (connexion, création, nouveau mot de passe)
+const OEIL = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const OEIL_BARRE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
+function voirMdp(champ, v) {
+  if (champ.type === "password" || champ.dataset.typeMdp) { champ.dataset.typeMdp = "1"; champ.type = v ? "text" : "password"; }
+  else champ.style.webkitTextSecurity = v ? "none" : "disc";
+  const b = $("mdp-oeil"); if (b) { b.innerHTML = v ? OEIL_BARRE : OEIL; b.setAttribute("aria-label", v ? "Masquer le mot de passe" : "Afficher le mot de passe"); b.dataset.vu = v ? "1" : ""; }
+}
+function ajouterOeil() {
+  const champ = $("compte-mdp"); if (!champ || $("mdp-oeil")) return;
+  const boite = document.createElement("div"); boite.style.cssText = "position:relative;max-width:" + (getComputedStyle(champ).maxWidth || "320px") + ";margin:" + getComputedStyle(champ).margin;
+  champ.parentNode.insertBefore(boite, champ); boite.appendChild(champ); champ.style.margin = "0"; champ.style.paddingRight = "44px"; champ.style.width = "100%"; champ.style.boxSizing = "border-box";
+  const b = document.createElement("button"); b.type = "button"; b.id = "mdp-oeil"; b.innerHTML = OEIL; b.setAttribute("aria-label", "Afficher le mot de passe");
+  b.style.cssText = "position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;padding:6px;cursor:pointer;color:var(--muted,#777);display:flex";
+  b.onclick = () => voirMdp(champ, !b.dataset.vu); boite.appendChild(b);
+}
+new MutationObserver(ajouterOeil).observe(document.documentElement, { childList: true, subtree: true });
 
 function majSide(vue) {
   const dansCours = vue === "cours" || vue === "cours-ouvert", dansExos = vue === "exos" || vue === "exos-ouvert";
