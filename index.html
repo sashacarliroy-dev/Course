@@ -885,12 +885,16 @@ async function charger(c) {
 const RECAP = 100;
 const estRecap = n => n > RECAP;
 // Jour du calendrier (1 = premier jour) : un récap sort le lendemain de la dernière leçon de son module
-const jourDe = (d, n) => estRecap(n) ? Math.max(...d.modules.find(m => m.n === n - RECAP).lecons.map(l => l.n)) + 1 : n;
+const jourDe = (d, n) => estRecap(n) ? Math.max(...d.modules.find(m => m.n === n - RECAP).lecons.map(l => l.n)) + (proprio ? 0 : 1) : n;
 const lien = n => estRecap(n) ? "recap-" + (n - RECAP) : "lecon-" + pad(n);
 const nomDe = n => estRecap(n) ? "Récap du module " + (n - RECAP) : "Leçon " + n;
 /* Chaque élève a sa propre date de départ (sa première visite) : la leçon 1 est ouverte tout de suite,
    puis une nouvelle leçon chaque matin à 8h. Les leçons pas encore débloquées restent dans d.toutes. */
+// Calendrier de la propriétaire : le 20/10/2026 = leçon 6 en finance et en trading (récap du module avec sa dernière leçon)
+const CAL_PROPRIO = { finance: "2026-10-15", trading: "2026-10-15" };
 function debutEleve(c) {
+  // La propriétaire garde le calendrier d'origine du site (une leçon par jour depuis le lancement du cours)
+  if (proprio && CAL_PROPRIO[c]) return CAL_PROPRIO[c];
   let debut = lire("debut-" + c, null);
   if (!debut) { debut = dejaVenu ? DATA[c].debut : jourISO(); ecrire("debut-" + c, debut); }
   return debut;
@@ -1139,9 +1143,25 @@ function pageFormules() {
     ${vues.length ? `<input type="search" class="formules-recherche" id="cherche-formule" placeholder="Rechercher : VAN, intérêts, BFR, Sharpe…" aria-label="Rechercher une formule" autocomplete="off">` : ""}
     <div id="liste-formules"></div>
     ${cachees ? `<div class="formules-verrou">${ICO.cadenas} ${cachees} formule${cachees > 1 ? "s" : ""} à débloquer en lisant les prochaines leçons.</div>` : ""}`;
+  // Recherche tolérante : chaque mot tapé compte (début de mot, morceau de mot ou petite faute de frappe), les meilleures en premier
+  const VIDES = new Set(["de", "du", "des", "la", "le", "les", "l", "d", "un", "une", "et", "a", "en", "au", "aux", "formule", "calcul", "calculer"]);
+  const proche = (a, b) => { if (Math.abs(a.length - b.length) > 1) return false; let i = 0, j = 0, e = 0; while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++e > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } } return e + (a.length - i) + (b.length - j) <= 1; };
+  const score = (f, mots) => {
+    const nom = sansAccent(f.nom), tout = sansAccent([f.nom, f.formule, f.mots, f.usage, f.variables].join(" ")), mt = tout.split(/[^a-z0-9]+/).filter(Boolean);
+    let s = 0;
+    for (const m of mots) {
+      if (nom.split(/[^a-z0-9]+/).some(x => x.startsWith(m))) s += 5;
+      else if (mt.some(x => x.startsWith(m))) s += 3;
+      else if (m.length >= 4 && tout.includes(m)) s += 2;
+      else if (m.length >= 4 && mt.some(x => proche(m, x.slice(0, m.length)) || proche(m, x))) s += 1;
+    }
+    return s;
+  };
   const afficher = q => {
-    const mots = sansAccent(q).split(/\s+/).filter(Boolean);
-    const res = vues.filter(f => { const mt = sansAccent([f.nom, f.formule, f.mots, f.usage].join(" ")).split(/[^a-z0-9]+/); return mots.every(m => mt.some(x => x.startsWith(m))); });
+    const mots = sansAccent(q).split(/[^a-z0-9]+/).filter(m => m && !VIDES.has(m));
+    const res = !mots.length ? vues : vues.map(f => [f, score(f, mots)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+    const bloquees = !mots.length || res.length ? [] : toutes.filter(f => !vues.includes(f) && score(f, mots) >= 3);
+    if (bloquees.length) { $("liste-formules").innerHTML = `<p class="note">${ICO.cadenas} Pas encore débloquée : ${bloquees.slice(0, 3).map(f => `« ${esc(f.nom)} » (leçon ${f.lecon})`).join(", ")}.</p>`; return; }
     $("liste-formules").innerHTML = res.map(f => `<div class="formule"><h3>${esc(f.nom)}</h3><div class="f">${puiss(esc(f.formule))}</div>
       ${f.variables ? `<p>${puiss(esc(f.variables))}</p>` : ""}${f.usage ? `<p>${esc(f.usage)}</p>` : ""}
       <p><a href="${lienCours(coursActif, f.lecon)}">Revoir la leçon ${f.lecon} →</a></p></div>`).join("")
