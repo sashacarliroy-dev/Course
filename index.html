@@ -763,12 +763,10 @@ async function ouvrirSession(d) {
   ecrire("session", session);
   appliquerProprio();
   if (session.id && session.id !== eleve) {
+    // On ne perd jamais rien : la progression de cet appareil (et celle de son ancien code) s'ajoute à celle du compte
+    await syncRecevoir();
+    const anciens = lire("anciens-eleves", []); if (!anciens.includes(eleve)) { anciens.push(eleve); ecrire("anciens-eleves", anciens); }
     eleve = session.id; ecrire("eleve", eleve);
-    // Compte déjà utilisé ailleurs : on reprend sa progression ; compte neuf : il adopte la progression de cet appareil
-    try {
-      const r = await fetch(`${SB.url}/rest/v1/progression?eleve=eq.${encodeURIComponent(eleve)}&select=cours&limit=1`, { headers: sbHeaders() });
-      if (r.ok && (await r.json()).length) for (const c of LES_COURS) { etat.lues[c] = {}; etat.quiz[c] = {}; }
-    } catch (e) {}
   }
   await syncRecevoir();
 }
