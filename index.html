@@ -1128,7 +1128,7 @@ const VOIX = (() => {
     synth.speak(u);
   }
   function lire(morceaux, fin) { arreter(); file = morceaux.filter(m => m.texte && m.texte.trim()); actif = true; surFin = fin || null; suivant(); }
-  function arreter() { actif = false; file = []; if (synth) synth.cancel(); document.querySelectorAll(".lu-voix").forEach(e => e.classList.remove("lu-voix")); }
+  function arreter() { try { LECTEUR.arreter(); } catch (e) {} actif = false; file = []; if (synth) synth.cancel(); document.querySelectorAll(".lu-voix").forEach(e => e.classList.remove("lu-voix")); }
   function pause() { if (synth.paused) synth.resume(); else synth.pause(); return synth.paused; }
   if (synth && synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => {};
   return { ok: !!synth, micro: !!Reco, Reco, lire, arreter, pause, parle: () => actif, pausee: () => !!(synth && synth.paused) };
@@ -1136,14 +1136,33 @@ const VOIX = (() => {
 let voixReponse = false; // la prochaine réponse de l'assistant est lue à voix haute (question posée au micro)
 
 /* Diapo animé avec voix de fond : construit automatiquement à partir de la leçon (une diapo par partie) */
+
+/* Pistes audio pré-enregistrées (voix naturelle Piper, fabriquées par .github/workflows/audio.yml) : audio/<cours>.json donne le nombre de pistes par leçon */
+const PISTES = {};
+async function pistesDe(c, n) {
+  if (LANGUE !== "fr") return null;
+  if (!(c in PISTES)) { try { const r = await fetch(`audio/${c}.json`, { cache: "no-cache" }); PISTES[c] = r.ok ? await r.json() : {}; } catch (e) { PISTES[c] = {}; } }
+  const k = PISTES[c][n]; return k ? Array.from({ length: k }, (_, i) => `audio/${c}/${n}/${i}.mp3`) : null;
+}
+const LECTEUR = (() => {
+  const a = new Audio(); a.preload = "auto"; let file = [], surPiste = null, surFin = null, actif = false;
+  const suivante = () => { if (!actif) return; const x = file.shift(); if (!x) { actif = false; if (surFin) surFin(); return; } if (surPiste) surPiste(x.i); a.src = x.url; a.play().catch(() => { actif = false; if (surFin) surFin(); }); };
+  a.onended = suivante;
+  return {
+    lire(urls, depuis, onPiste, fin) { this.arreter(); file = urls.map((url, i) => ({ url, i })).slice(depuis || 0); surPiste = onPiste; surFin = fin; actif = true; suivante(); },
+    arreter() { actif = false; file = []; a.pause(); a.removeAttribute("src"); },
+    pause() { if (a.paused) a.play(); else a.pause(); return a.paused; },
+    parle: () => actif, pausee: () => actif && a.paused,
+  };
+})();
 function diapoDepuisLecon() {
   const art = document.querySelector("#lecture article.cours"), titre = document.querySelector("#lecture .lecon-head h1").textContent, sur = document.querySelector("#lecture .lecon-head .eyebrow").textContent;
   const phrase1 = t => { const m = t.replace(/\s+/g, " ").trim().match(/^.{20,}?[.!?](\s|$)/); const x = m ? m[0] : t; return x.length > 170 ? x.slice(0, 160).replace(/\s\S*$/, "") + "…" : x.trim(); };
   const slides = [], intro = [...art.children].filter(e => e.tagName === "P").slice(0, 1);
-  slides.push({ sur, titre, points: [], voix: titre + ". " + (intro[0] ? intro[0].textContent : "") });
+  slides.push({ sur, titre, points: [], piste: 0, voix: titre + ". " + (intro[0] ? intro[0].textContent : "") });
   let cur = null;
   for (const e of art.children) {
-    if (/^H[23]$/.test(e.tagName)) { cur = { sur: titre, titre: e.textContent, points: [], formules: [], voix: e.textContent + ". " }; slides.push(cur); continue; }
+    if (e.tagName === "H2") { cur = { sur: titre, titre: e.textContent, points: [], formules: [], piste: slides.length, voix: e.textContent + ". " }; slides.push(cur); continue; }
     if (!cur) continue;
     const txt = e.textContent.replace(/\s+/g, " ").trim(); if (!txt) continue;
     cur.voix += txt + " ";
@@ -1155,8 +1174,9 @@ function diapoDepuisLecon() {
   slides.push({ sur: "Fin", titre: "Bravo, tu as vu l'essentiel !", points: ["Relis la leçon pour les détails", "Fais le quiz éclair pour vérifier"], voix: "Bravo, tu as vu l'essentiel de la leçon. Relis-la pour les détails, puis fais le quiz éclair." });
   return slides.filter(sl => sl.points.length || sl.formules && sl.formules.length || sl === slides[0] || sl.sur === "Fin");
 }
-function ouvrirDiapo() {
+async function ouvrirDiapo() {
   VOIX.arreter();
+  const pistes = await pistesDe(coursActif, leconCourante);
   const slides = diapoDepuisLecon(), c = getComputedStyle($("lecture")).getPropertyValue("--c");
   const el = document.createElement("div"); el.className = "diapo"; el.style.setProperty("--c", c || "#2c8a72");
   el.innerHTML = `<div class="scene" id="scene-d"></div><div class="bas-d"><button type="button" data-a="prec">◀</button><button type="button" data-a="pause">⏸ Pause</button><button type="button" data-a="suiv">▶</button><div class="prog"><i></i></div><span class="compte-d"></span><button type="button" data-a="fermer">✕ Fermer</button></div>`;
@@ -1168,7 +1188,8 @@ function ouvrirDiapo() {
     el.querySelector("#scene-d").innerHTML = `<div class="slide"><div class="sur">${esc(sl.sur)}</div><h2>${esc(sl.titre)}</h2>${sl.points.length ? `<ul>${sl.points.map((p, k) => `<li style="animation-delay:${0.5 + k * 1.4}s">${puiss(esc(p))}</li>`).join("")}</ul>` : ""}${(sl.formules || []).map(f => `<div class="formule-d" style="animation-delay:${0.6 + sl.points.length * 1.4}s">${puiss(esc(f))}</div>`).join("")}</div>`;
     el.querySelector(".prog i").style.width = ((i + 1) / slides.length * 100) + "%"; el.querySelector(".compte-d").textContent = (i + 1) + " / " + slides.length;
     const fin = () => { if (!enPause && i < slides.length - 1) { minuteur = setTimeout(() => { i++; montrer(); }, 900); } };
-    if (VOIX.ok) VOIX.lire([{ texte: sl.voix }], fin); else minuteur = setTimeout(fin, 6000);
+    if (pistes && sl.piste != null && pistes[sl.piste]) LECTEUR.lire([pistes[sl.piste]], 0, null, fin);
+    else if (VOIX.ok) VOIX.lire([{ texte: sl.voix }], fin); else minuteur = setTimeout(fin, 6000);
   };
   const fermer = () => { clearTimeout(minuteur); VOIX.arreter(); el.remove(); document.body.style.overflow = ""; removeEventListener("keydown", touches); removeEventListener("hashchange", fermer); };
   const touches = e => { if (e.key === "Escape") fermer(); if (e.key === "ArrowRight" && i < slides.length - 1) { i++; montrer(); } if (e.key === "ArrowLeft" && i > 0) { i--; montrer(); } };
@@ -1177,7 +1198,7 @@ function ouvrirDiapo() {
     if (a.dataset.a === "fermer") return fermer();
     if (a.dataset.a === "suiv" && i < slides.length - 1) { i++; enPause = false; montrer(); }
     if (a.dataset.a === "prec" && i > 0) { i--; enPause = false; montrer(); }
-    if (a.dataset.a === "pause") { enPause = !enPause; a.textContent = enPause ? "▶ Reprendre" : "⏸ Pause"; if (enPause) { clearTimeout(minuteur); VOIX.pause(); } else { if (VOIX.pausee()) VOIX.pause(); else montrer(); } }
+    if (a.dataset.a === "pause") { enPause = !enPause; a.textContent = enPause ? "▶ Reprendre" : "⏸ Pause"; if (enPause) { clearTimeout(minuteur); if (LECTEUR.parle()) LECTEUR.pause(); else VOIX.pause(); } else { if (LECTEUR.pausee()) LECTEUR.pause(); else if (VOIX.pausee()) VOIX.pause(); else montrer(); } }
     if (a.dataset.a !== "pause") el.querySelector('[data-a="pause"]').textContent = "⏸ Pause";
   };
   addEventListener("keydown", touches); addEventListener("hashchange", fermer);
@@ -1185,9 +1206,16 @@ function ouvrirDiapo() {
 }
 function brancherEcoute() {
   const b = $("ecouter"), stop = $("ecouter-stop"); if (!b) return;
-  const etatBoutons = () => { const p = VOIX.parle(); stop.hidden = !p; b.textContent = !p ? "🔊 Écouter la leçon" : VOIX.pausee() ? "▶ Reprendre" : "⏸ Pause"; };
-  b.onclick = () => {
+  const etatBoutons = () => { const enr = LECTEUR.parle(), p = enr || VOIX.parle(); stop.hidden = !p; b.textContent = !p ? "🔊 Écouter la leçon" : (enr ? LECTEUR.pausee() : VOIX.pausee()) ? "▶ Reprendre" : "⏸ Pause"; };
+  b.onclick = async () => {
+    if (LECTEUR.parle()) { LECTEUR.pause(); etatBoutons(); return; }
     if (VOIX.parle()) { VOIX.pause(); etatBoutons(); return; }
+    const pistes = await pistesDe(coursActif, leconCourante);
+    if (pistes) {
+      const art = document.querySelector("#lecture article.cours"), reperes = [document.querySelector("#lecture .lecon-head h1"), ...art.querySelectorAll(":scope > h2")];
+      LECTEUR.lire(pistes, 0, i => { document.querySelectorAll(".lu-voix").forEach(e => e.classList.remove("lu-voix")); const r = reperes[i]; if (r) { r.classList.add("lu-voix"); r.scrollIntoView({ block: "start", behavior: "smooth" }); } }, () => { document.querySelectorAll(".lu-voix").forEach(e => e.classList.remove("lu-voix")); etatBoutons(); });
+      etatBoutons(); return;
+    }
     const art = document.querySelector("#lecture article.cours"), titre = document.querySelector("#lecture .lecon-head h1");
     const blocs = [...art.querySelectorAll("h2, h3, h4, p, li, td, blockquote, figcaption")].filter(e => !e.closest("li p, td p") && !(e.tagName === "P" && e.closest("li, td")));
     VOIX.lire([{ texte: titre ? titre.textContent : "", el: titre }, ...blocs.map(e => ({ texte: e.textContent, el: e }))], etatBoutons);
