@@ -22,7 +22,7 @@ cache = {}
 
 def g(t):
     if t in cache: return cache[t]
-    for i in range(6):
+    for i in range(4):
         try:
             r = tr.translate(t)
             if r: return r
@@ -88,11 +88,18 @@ def envoyer(p):
         for a, b in zip(p, res): cache[a] = b.strip()
     elif len(p) > 1:
         m = len(p) // 2; envoyer(p[:m]); envoyer(p[m:])
-taille = 0
+def sauver():
+    os.makedirs("langues", exist_ok=True)
+    json.dump(walk(src, partiel, "", f_remplace), open(f"langues/{c}-{lg}.json", "w", encoding="utf-8"), ensure_ascii=False)
+    print(len(cache), "/", len(uniques), flush=True)
+taille = nb_paquets = 0
 for i, t in enumerate(uniques):
-    if taille + len(t) > 4500: envoyer(paquet); paquet, taille = [], 0
+    if taille + len(t) > 4500:
+        envoyer(paquet); paquet, taille = [], 0; nb_paquets += 1
+        if nb_paquets % 10 == 0: sauver()
     paquet.append(t); taille += len(t) + 1
 envoyer(paquet)
+sauver()
 # textes qui contenaient des retours à la ligne
 for t in textes:
     if "\n" in t and t not in cache: cache[t] = cache.get(t.replace("\n", " "), t)

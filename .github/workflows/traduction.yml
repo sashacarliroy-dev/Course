@@ -9,14 +9,18 @@ jobs:
     timeout-minutes: 340
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         cours: [finance, trading, perso, excel]
         langue: [en, es]
     steps:
       - uses: actions/checkout@v4
       - run: pip install -q deep-translator
-      - run: python outils/traduire.py ${{ matrix.cours }} ${{ matrix.langue }}
+      - timeout-minutes: 150
+        continue-on-error: true
+        run: python outils/traduire.py ${{ matrix.cours }} ${{ matrix.langue }}
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: trad-${{ matrix.cours }}-${{ matrix.langue }}
           path: langues/${{ matrix.cours }}-${{ matrix.langue }}.json
