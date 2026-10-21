@@ -1,0 +1,42 @@
+name: Traduction des cours
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  traduire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        cours: [finance, trading, perso, excel]
+        langue: [en, es]
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q deep-translator
+      - run: python outils/traduire.py ${{ matrix.cours }} ${{ matrix.langue }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trad-${{ matrix.cours }}-${{ matrix.langue }}
+          path: langues/${{ matrix.cours }}-${{ matrix.langue }}.json
+  publier:
+    needs: traduire
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          path: tmp-trad
+      - name: Publier sur le site
+        run: |
+          mkdir -p langues
+          find tmp-trad -name '*.json' -exec cp {} langues/ \;
+          git config user.name "rosace-traduction"
+          git config user.email "rosace-traduction@users.noreply.github.com"
+          git add langues
+          git diff --cached --quiet || git commit -m "Traduction des cours (en, es)"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push && break; sleep 5; done

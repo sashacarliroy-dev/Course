@@ -911,14 +911,17 @@ function serie() {
    4. Données des cours
    ========================================================= */
 const DATA = {};
+const EXOS_TRAD = {};
 let coursActif = lire("cours", "finance"); if (!LES_COURS.includes(coursActif)) coursActif = "finance";
 if (etat.mesCours && etat.mesCours.length && !etat.mesCours.includes(coursActif)) coursActif = etat.mesCours[0];
 async function charger(c) {
   if (DATA[c]) return DATA[c];
   // Version traduite du cours si elle existe (data-finance-en…), sinon le français
-  const trad = LANGUE !== "fr" && document.getElementById("data-" + c + "-" + LANGUE);
-  const d = JSON.parse((trad || document.getElementById("data-" + c)).textContent);
-  d.traduit = LANGUE === "fr" || !!trad;
+  // Les traductions vivent dans langues/<cours>-<langue>.json (chargées seulement si besoin)
+  let trad = null;
+  if (LANGUE !== "fr") try { const r = await fetch("langues/" + c + "-" + LANGUE + ".json"); if (r.ok) { trad = await r.json(); if (trad.exos) EXOS_TRAD[c] = trad.exos; if (trad.formules && FORMULES[c]) FORMULES[c] = trad.formules; } } catch (e) {}
+  const d = trad && trad.lecons ? trad : JSON.parse(document.getElementById("data-" + c).textContent);
+  d.traduit = LANGUE === "fr" || !!(trad && trad.lecons);
   // Ordre de lecture : les leçons de chaque module, puis son récap (identifiant 100 + numéro du module)
   d.toutes = Object.assign({}, d.lecons);
   for (const [m, r] of Object.entries(d.recaps || {})) d.toutes[RECAP + Number(m)] = r;
@@ -1309,7 +1312,7 @@ function lecture(n) {
    ========================================================= */
 const EXOS = {};
 function exosDe(c) {
-  if (!EXOS[c]) { const el = (LANGUE !== "fr" && document.getElementById("exos-" + c + "-" + LANGUE)) || document.getElementById("exos-" + c); EXOS[c] = el ? JSON.parse(el.textContent) : {}; }
+  if (!EXOS[c] || (EXOS_TRAD[c] && EXOS[c] !== EXOS_TRAD[c])) { const el = document.getElementById("exos-" + c); EXOS[c] = EXOS_TRAD[c] || (el ? JSON.parse(el.textContent) : {}); }
   return EXOS[c];
 }
 function scoresExos(c) { etat.exos = etat.exos || {}; return etat.exos[c] = etat.exos[c] || {}; }
@@ -1749,7 +1752,7 @@ appliquerAffichage();
 $("btn-reglages").onclick = () => {
   $("reg-compte").textContent = session ? "Connectée en tant que " + session.email : "Tu n'es pas connectée.";
   const noms = mesCours().map(c => COURS[c].nom);
-  $("reg-cours").textContent = noms.length ? `Tu suis ${noms.join(" et ")} (${noms.length}/${MAX_COURS}).` : "Tu n'as pas encore choisi de cours.";
+  $("reg-cours").textContent = noms.length ? `Tu suis ${noms.join({ fr: " et ", en: " and ", es: " y " }[LANGUE])} (${noms.length}/${MAX_COURS}).` : "Tu n'as pas encore choisi de cours.";
   $("etat-sync").textContent = SB ? "" : "La sauvegarde en ligne n'est pas disponible pour le moment : ta progression reste sur cet appareil.";
   $("reglages").hidden = false;
 };
