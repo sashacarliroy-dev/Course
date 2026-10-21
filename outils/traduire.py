@@ -29,7 +29,7 @@ def g(t):
             time.sleep(2 * (i + 1))
     return t
 
-def traduire_texte(t):
+def _inutile(t):
     if not re.search(r"[A-Za-zÀ-ÿ]{2}", t): return t
     a = len(t) - len(t.lstrip()); b = len(t.rstrip())
     return t[:a] + g(t[a:b]) + t[b:]
@@ -42,17 +42,59 @@ def traduire_html(h):
 def deja(src_v, part_v):
     return isinstance(part_v, str) and part_v != src_v and part_v.strip() != ""
 
-def walk(s, part, cle=""):
+# 1) on collecte tous les textes à traduire, 2) on les envoie par paquets (~4500 caractères),
+# 3) on reconstruit. Bien moins d'appels qu'un appel par phrase.
+textes = []
+def collecte(t):
+    if re.search(r"[A-Za-zÀ-ÿ]{2}", t) and t.strip() not in cache: textes.append(t.strip())
+
+def morceaux(s):
+    return re.split(r"(<[^>]+>)", s) if "<" in s else [s]
+
+def walk(s, part, cle, f):
     if isinstance(s, dict):
-        return {k: walk(v, part.get(k) if isinstance(part, dict) else None, k) for k, v in s.items()}
+        return {k: walk(v, part.get(k) if isinstance(part, dict) else None, k, f) for k, v in s.items()}
     if isinstance(s, list):
-        return [walk(v, part[i] if isinstance(part, list) and i < len(part) else None, cle) for i, v in enumerate(s)]
+        return [walk(v, part[i] if isinstance(part, list) and i < len(part) else None, cle, f) for i, v in enumerate(s)]
     if not isinstance(s, str) or cle in GARDER: return s
     if deja(s, part): return part
-    if cle == "mots": return s + ", " + g(s)
-    return traduire_html(s) if "<" in s else traduire_texte(s)
+    return f(s, cle)
 
-out = walk(src, partiel)
+def f_collecte(s, cle):
+    for m in morceaux(s):
+        if not m.startswith("<"): collecte(m)
+    return s
+
+def remplace(t):
+    if not re.search(r"[A-Za-zÀ-ÿ]{2}", t): return t
+    a = len(t) - len(t.lstrip()); b = len(t.rstrip())
+    return t[:a] + cache.get(t[a:b], t[a:b]) + t[b:]
+
+def f_remplace(s, cle):
+    r = "".join(m if m.startswith("<") else remplace(m) for m in morceaux(s))
+    return s + ", " + r if cle == "mots" else r
+
+walk(src, partiel, "", f_collecte)
+uniques = list(dict.fromkeys(t.replace("\n", " ") for t in textes))
+paquet = []
+def envoyer(p):
+    if not p: return
+    time.sleep(1)
+    res = g("\n".join(p)).split("\n")
+    if len(res) == len(p):
+        for a, b in zip(p, res): cache[a] = b.strip()
+    else:
+        for a in p: cache[a] = g(a)
+taille = 0
+for i, t in enumerate(uniques):
+    if taille + len(t) > 4500: envoyer(paquet); paquet, taille = [], 0
+    paquet.append(t); taille += len(t) + 1
+envoyer(paquet)
+# textes qui contenaient des retours à la ligne
+for t in textes:
+    if "\n" in t and t not in cache: cache[t] = cache.get(t.replace("\n", " "), t)
+
+out = walk(src, partiel, "", f_remplace)
 os.makedirs("langues", exist_ok=True)
 json.dump(out, open(f"langues/{c}-{lg}.json", "w", encoding="utf-8"), ensure_ascii=False)
-print(c, lg, "ok", len(cache), "appels")
+print(c, lg, "ok", len(uniques), "textes")
