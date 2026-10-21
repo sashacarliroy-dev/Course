@@ -22,12 +22,14 @@ cache = {}
 
 def g(t):
     if t in cache: return cache[t]
-    for i in range(5):
+    for i in range(6):
         try:
-            r = tr.translate(t) or t; cache[t] = r; return r
+            r = tr.translate(t)
+            if r: return r
         except Exception as e:
-            time.sleep(2 * (i + 1))
-    return t
+            print("erreur", e)
+        time.sleep(5 * 2 ** i)  # Google limite : on attend de plus en plus longtemps
+    return None
 
 def _inutile(t):
     if not re.search(r"[A-Za-zÀ-ÿ]{2}", t): return t
@@ -79,12 +81,13 @@ uniques = list(dict.fromkeys(t.replace("\n", " ") for t in textes))
 paquet = []
 def envoyer(p):
     if not p: return
-    time.sleep(1)
-    res = g("\n".join(p)).split("\n")
+    time.sleep(3)
+    r = g("\n".join(p))
+    res = r.split("\n") if r else []
     if len(res) == len(p):
         for a, b in zip(p, res): cache[a] = b.strip()
-    else:
-        for a in p: cache[a] = g(a)
+    elif len(p) > 1:
+        m = len(p) // 2; envoyer(p[:m]); envoyer(p[m:])
 taille = 0
 for i, t in enumerate(uniques):
     if taille + len(t) > 4500: envoyer(paquet); paquet, taille = [], 0
@@ -97,4 +100,4 @@ for t in textes:
 out = walk(src, partiel, "", f_remplace)
 os.makedirs("langues", exist_ok=True)
 json.dump(out, open(f"langues/{c}-{lg}.json", "w", encoding="utf-8"), ensure_ascii=False)
-print(c, lg, "ok", len(uniques), "textes")
+print(c, lg, "ok", len(uniques), "textes,", sum(1 for t in uniques if t not in cache), "non traduits")
