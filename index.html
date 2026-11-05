@@ -122,6 +122,10 @@ button.carte[aria-pressed="false"] .go { background: rgba(255,255,255,.16); colo
 .stats-grille b { display: block; font: 400 30px/1.1 var(--f-display); }
 .stats-grille small { color: var(--muted); }
 .stats-barres { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 10px 0; }
+.stats-dates{display:flex;gap:4px;margin-top:6px}.stats-dates span{flex:1;font-size:11px;color:var(--muted);white-space:nowrap;text-align:center;overflow:visible}
+.stats-barres i.choisi{outline:2px solid var(--gold)}
+.stats-table{width:100%;border-collapse:collapse;font-size:14px}.stats-table th,.stats-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}.stats-table th{font-size:12px;color:var(--muted);font-weight:600}
+.stats-prog{display:block;width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}.stats-prog i{display:block;height:100%}.stats-table small{display:block;color:var(--muted);font-size:12px}
 .stats-barres i { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
 .stats-barres i b { position: absolute; inset: auto 0 0 0; background: var(--gold); border-radius: 3px 3px 0 0; }
 .stats-legende { display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
@@ -1779,7 +1783,11 @@ function noterVisite() {
   derniereVisite = Date.now();
   const lues = LES_COURS.reduce((a, c) => a + Object.keys(etat.lues[c] || {}).length, 0);
   fetch(`${SB.url}/rest/v1/rpc/noter_visite`, { method: "POST", headers: sbHeaders(),
-    body: JSON.stringify({ p_eleve: eleve, p_cours: mesCours(), p_xp: xpTotal(), p_lues: lues }) }).catch(() => {});
+    body: JSON.stringify({ p_eleve: eleve, p_cours: mesCours(), p_xp: xpTotal(), p_lues: lues,
+      p_detail: Object.fromEntries(LES_COURS.map(c => [c, Object.keys(etat.lues[c] || {}).length])), p_email: session ? session.email : null }) })
+    .then(r => { if (!r.ok) // base pas encore mise à jour : ancienne version de la fonction
+      fetch(`${SB.url}/rest/v1/rpc/noter_visite`, { method: "POST", headers: sbHeaders(), body: JSON.stringify({ p_eleve: eleve, p_cours: mesCours(), p_xp: xpTotal(), p_lues: lues }) }).catch(() => {}); })
+    .catch(() => {});
 }
 let modeCompte = "connexion";
 function pageCompte() {
@@ -1879,7 +1887,12 @@ async function pageStats() {
   };
   const afficherStats = s => {
     const max = Math.max(1, ...s.par_jour.map(j => j.actifs));
-    const jours = s.par_jour.map(j => `<i style="height:${j.actifs / max * 100}%" title="${j.jour} : ${j.actifs} actif(s), ${j.nouveaux} nouveau(x)"><b style="height:${j.actifs ? j.nouveaux / j.actifs * 100 : 0}%"></b></i>`).join("");
+    const jj = d => new Date(d + "T12:00:00").toLocaleDateString(LOCALE, { day: "numeric", month: "short" });
+    const jours = s.par_jour.map((j, k) => `<i data-j="${k}" style="height:${j.actifs / max * 100}%;cursor:pointer" title="${jj(j.jour)} : ${j.actifs} actif(s), ${j.nouveaux} nouveau(x)"><b style="height:${j.actifs ? j.nouveaux / j.actifs * 100 : 0}%"></b></i>`).join("");
+    const dates = s.par_jour.map((j, k) => `<span>${k % 5 === 4 || k === 29 ? jj(j.jour) : ""}</span>`).join("");
+    const NOMS_C = { finance: "Finance", trading: "Trading", perso: "Perso", excel: "Excel" }, TOT = 48;
+    const liste = (s.liste || []).map(e => `<tr><td>${esc(e.nom)}</td><td>${jj(String(e.derniere).slice(0, 10))}</td><td>${e.jours}</td><td>${e.xp}</td>
+      <td>${LES_COURS.map(c => { const n = (e.detail || {})[c] || 0; return n ? `<span class="stats-prog" title="${n}/${TOT}"><i style="width:${Math.round(n / TOT * 100)}%;background:${COULEUR_COURS[c]}"></i></span><small>${NOMS_C[c]} ${Math.round(n / TOT * 100)}%</small>` : ""; }).join("") || `<small>${e.lues} leçon(s)</small>`}</td></tr>`).join("");
     const cours = Object.entries(s.par_cours).sort((a, b) => b[1] - a[1]).map(([c, n]) => `<div><b>${n}</b><small>${esc(COURS[c] ? COURS[c].nom : c)}</small></div>`).join("");
     el.innerHTML = `<div class="tdb"><section class="portail-hero"><div class="eyebrow">Espace privé</div><h1>Statistiques</h1><p>Comment le site évolue, mis à jour en direct.</p></section>
       <div class="stats-grille">
@@ -1894,10 +1907,19 @@ async function pageStats() {
       </div>
       <section class="boite"><div class="eyebrow">30 derniers jours</div><h2>Élèves actifs par jour</h2>
         <div class="stats-barres">${jours}</div>
-        <div class="stats-legende"><span><i style="background:var(--accent)"></i>actifs</span><span><i style="background:var(--gold)"></i>dont nouveaux</span></div></section>
+        <div class="stats-dates">${dates}</div>
+        <div class="stats-legende"><span><i style="background:var(--accent)"></i>actifs</span><span><i style="background:var(--gold)"></i>dont nouveaux</span></div>
+        <p id="stats-qui" class="note">Touche une barre pour voir qui s'est connecté ce jour-là.</p></section>
+      <section class="boite" style="margin-top:16px"><div class="eyebrow">Suivi</div><h2>Les élèves et leur avancée</h2>
+        <div style="overflow-x:auto"><table class="stats-table"><thead><tr><th>Élève</th><th>Dernière visite</th><th>Jours actifs</th><th>XP</th><th>Avancée</th></tr></thead><tbody>${liste || '<tr><td colspan="5">Pas encore de données.</td></tr>'}</tbody></table></div></section>
       <section class="boite" style="margin-top:16px"><div class="eyebrow">Cours choisis</div><h2>Ce que suivent les élèves</h2><div class="stats-grille">${cours || "<p>Pas encore de données.</p>"}</div></section>
       <p class="note"><a href="#stats" id="stats-maj">Actualiser</a> · Cette page n'apparaît nulle part dans le menu.</p></div>`;
     $("stats-maj").onclick = e => { e.preventDefault(); chargerStats(mdp0()); };
+    el.querySelectorAll(".stats-barres i").forEach(b => b.onclick = () => {
+      const j = s.par_jour[+b.dataset.j], qui = j.qui || [];
+      el.querySelectorAll(".stats-barres i").forEach(x => x.classList.toggle("choisi", x === b));
+      $("stats-qui").innerHTML = `<b>${jj(j.jour)}</b> : ${qui.length ? qui.map(esc).join(", ") : "personne"}`;
+    });
   };
   const mdp0 = () => { try { return sessionStorage.getItem("mdp-stats"); } catch (e) { return null; } };
   mdp0() ? await chargerStats(mdp0()) : formulaire();
