@@ -623,12 +623,12 @@ a.exo-mod:hover { transform: translateY(-2px); }
   <div class="boite" role="dialog" aria-labelledby="titre-reglages">
     <h2 id="titre-reglages">Réglages</h2>
     <section class="reg-section"><h3>Affichage</h3>
-      <div class="reg-ligne"><span>Langue · Language · Idioma</span><div class="seg" id="seg-langue"><button type="button" data-v="fr">Français</button><button type="button" data-v="en">English</button><button type="button" data-v="es">Español</button></div></div>
+      <div class="reg-ligne"><span>Langue · Language</span><div class="seg" id="seg-langue"><button type="button" data-v="fr">Français</button><button type="button" data-v="en">English</button></div></div>
       <div class="reg-ligne"><span>Thème</span><div class="seg" id="seg-theme"><button type="button" data-t="auto">Auto</button><button type="button" data-t="light">Clair</button><button type="button" data-t="dark">Sombre</button></div></div>
       <div class="reg-ligne"><span>Taille du texte des leçons</span><div class="seg" id="seg-taille"><button type="button" data-v="normal">Normale</button><button type="button" data-v="grand">Grande</button></div></div>
       <div class="reg-ligne"><span>Confettis et animations</span><div class="seg" id="seg-anim"><button type="button" data-v="oui">Oui</button><button type="button" data-v="non">Non</button></div></div>
     </section>
-    <section class="reg-section"><h3>Mes cours</h3>
+    <section class="reg-section" id="reg-mes-cours"><h3>Mes cours</h3>
       <p id="reg-cours"></p>
       <div class="ligne"><a class="btn ghost" href="#choisir" id="reg-changer">Changer mes cours</a></div>
     </section>
@@ -726,7 +726,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 const pad = n => String(n).padStart(2, "0");
 const jourISO = (d = new Date()) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 /* Langue de l'interface : français, anglais ou espagnol */
-const LANGUES = { fr: "Français", en: "English", es: "Español" };
+const LANGUES = { fr: "Français", en: "English" };
 const LANGUE = (() => { let v = null; try { v = JSON.parse(localStorage.getItem("langue")); } catch (e) {} if (LANGUES[v]) return v; const n = (navigator.language || "fr").slice(0, 2); return LANGUES[n] ? n : "fr"; })();
 const LOCALE = { fr: "fr-FR", en: "en-GB", es: "es-ES" }[LANGUE];
 document.documentElement.lang = LANGUE;
@@ -767,7 +767,9 @@ if (!etat.mesCours && dejaVenu) { etat.mesCours = LES_COURS.filter(c => c !== "e
 // Sur l'appareil de la propriétaire (débloqué par la page #stats), tous les cours sont ouverts
 let proprio = lire("proprio", false);
 if (proprio) $("nav-stats").hidden = false;
-const mesCours = () => proprio ? LES_COURS.slice() : (etat.mesCours || []).filter(c => COURS[c] && LES_COURS.includes(c));
+// Pour le moment, tout le monde a accès à tous les cours
+const TOUT_OUVERT = true;
+const mesCours = () => proprio || TOUT_OUVERT ? LES_COURS.slice() : (etat.mesCours || []).filter(c => COURS[c] && LES_COURS.includes(c));
 const aAcces = c => mesCours().includes(c);
 let eleve = lire("eleve", null);
 if (!eleve) { eleve = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); ecrire("eleve", eleve); }
@@ -834,7 +836,7 @@ async function lireJetonsAdresse() {
   history.replaceState(null, "", location.pathname + location.search + "#compte");
   try { await ouvrirSession({ access_token: p.get("access_token"), refresh_token: p.get("refresh_token"), expires_at: Number(p.get("expires_at")) || 0, expires_in: Number(p.get("expires_in")) || 3600 }); } catch (e) {}
   if (p.get("type") === "recovery") modeRecup = true;
-  else if (session) location.hash = etat.mesCours ? "#accueil" : "#choisir";
+  else if (session) location.hash = etat.mesCours ? "#accueil" : (TOUT_OUVERT ? "#accueil" : "#choisir");
 }
 function deconnecter() {
   const t = session && session.access_token;
@@ -953,7 +955,7 @@ function debloquer(c) {
   for (const n of d.ordre) {
     if (!d.toutes[n]) continue;
     const j = jourDe(d, n), quand = new Date(d.debutEleve + "T08:00:00"); quand.setDate(quand.getDate() + j - 1);
-    if (j === 1 || quand <= maintenant) lecons[n] = d.toutes[n];
+    if (TOUT_OUVERT || j === 1 || quand <= maintenant) lecons[n] = d.toutes[n];
   }
   d.lecons = lecons;
   d.dispo = d.ordre.filter(n => lecons[n]);
@@ -1278,7 +1280,7 @@ function lecture(n) {
     <header class="lecon-head">
       <div class="eyebrow">Module ${m ? m.n : ""} · ${m ? esc(m.titre) : ""}</div>
       <h1>${esc(titreDe(n))}</h1>
-      <div class="meta"><span>Publiée le ${fmt(dateDe(n))}</span><span>⏱ ${minutes(n)} min</span>${estLue(n) ? '<span style="color:var(--up)">✓ Lue</span>' : ""}${q ? `<span>Quiz : ${q.bons}/${q.total}</span>` : ""}</div>
+      <div class="meta">${TOUT_OUVERT ? "" : `<span>Publiée le ${fmt(dateDe(n))}</span>`}<span>⏱ ${minutes(n)} min</span>${estLue(n) ? '<span style="color:var(--up)">✓ Lue</span>' : ""}${q ? `<span>Quiz : ${q.bons}/${q.total}</span>` : ""}</div>
       <div class="stripe"></div>
     </header>
     ${d.traduit ? "" : `<p class="note">${{ en: "This lesson is only available in French for now. The AI assistant can explain it to you in English.", es: "Esta lección solo está disponible en francés por ahora. El asistente IA puede explicártela en español." }[LANGUE]}</p>`}
@@ -1752,6 +1754,7 @@ appliquerAffichage();
 $("btn-reglages").onclick = () => {
   $("reg-compte").textContent = session ? "Connectée en tant que " + session.email : "Tu n'es pas connectée.";
   const noms = mesCours().map(c => COURS[c].nom);
+  $("reg-mes-cours").hidden = TOUT_OUVERT;
   $("reg-cours").textContent = noms.length ? `Tu suis ${noms.join({ fr: " et ", en: " and ", es: " y " }[LANGUE])} (${noms.length}/${MAX_COURS}).` : "Tu n'as pas encore choisi de cours.";
   $("etat-sync").textContent = SB ? "" : "La sauvegarde en ligne n'est pas disponible pour le moment : ta progression reste sur cet appareil.";
   $("reglages").hidden = false;
@@ -1786,7 +1789,7 @@ function pageCompte() {
   if (!$("prof").hidden) fermerProf();
   majSide(""); barreLecture(); scrollTo(0, 0);
   const el = $("page-ia"), champ = "formules-recherche", st = "max-width:320px;margin:6px auto;display:block";
-  const fini = () => { location.hash = etat.mesCours ? "#accueil" : "#choisir"; };
+  const fini = () => { location.hash = etat.mesCours ? "#accueil" : (TOUT_OUVERT ? "#accueil" : "#choisir"); };
   if (modeRecup && session) {
     el.innerHTML = `<section class="page-ia"><div class="eyebrow">Mon compte</div><h1>Nouveau mot de passe</h1>
       <p>Choisis un nouveau mot de passe pour ${esc(session.email || "ton compte")}.</p>
@@ -1807,7 +1810,7 @@ function pageCompte() {
   if (session) {
     el.innerHTML = `<section class="page-ia"><div class="eyebrow">Mon compte</div><h1>Tu es connectée</h1>
       <p>Connectée en tant que <b>${esc(session.email)}</b></p>
-      <div class="ligne" style="justify-content:center;display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="${etat.mesCours ? "#accueil" : "#choisir"}">Continuer →</a><button class="btn ghost" type="button" id="compte-sortir">Se déconnecter</button></div></section>`;
+      <div class="ligne" style="justify-content:center;display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="${etat.mesCours ? "#accueil" : (TOUT_OUVERT ? "#accueil" : "#choisir")}">Continuer →</a><button class="btn ghost" type="button" id="compte-sortir">Se déconnecter</button></div></section>`;
     $("compte-sortir").onclick = deconnecter; return;
   }
   const insc = modeCompte === "inscription", oubli = modeCompte === "oubli";
@@ -2178,7 +2181,7 @@ async function route() {
   }
   noterVisite();
   // Nouveaux élèves (ou « Changer mes cours ») : choix des cours d'abord
-  if (!etat.mesCours || h === "choisir") {
+  if (!TOUT_OUVERT && (!etat.mesCours || h === "choisir")) {
     if (!etat.mesCours) { choixTemp = []; } else if (pageCourante !== "choisir") choixTemp = mesCours();
     pageCourante = "choisir";
     document.body.classList.add("sur-portail");
