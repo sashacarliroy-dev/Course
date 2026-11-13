@@ -278,7 +278,11 @@ button { font-family: inherit; }
 :root[data-cours="perso"] .switch .pill { transform: translateX(200%); }
 @media (max-width: 420px) { .switch button { padding: 10px 10px; } .switch small { display: none; } }
 .switch small { font: 500 11px/1 var(--f-mono); opacity: .8; }
-.outils { display: flex; gap: 6px; align-items: center; }
+.outils { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.top .in { max-width: none; }
+.langue-haut { display: inline-flex; height: 40px; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.langue-haut button { border: 0; background: none; color: var(--muted); font: 600 13px/1 var(--f-mono); padding: 0 12px; border-radius: 999px; cursor: pointer; }
+.langue-haut button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .rond { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
 .rond svg { width: 18px; height: 18px; }
 .flamme-mini { display: inline-flex; align-items: center; gap: 4px; font: 600 14px/1 var(--f-mono); color: var(--flame); padding: 0 10px; height: 40px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
@@ -587,6 +591,7 @@ a.exo-mod:hover { transform: translateY(-2px); }
       <button type="button" data-cours="perso" aria-pressed="false">Perso <small class="num" id="sw-perso"></small></button>
     </div>
     <div class="outils">
+      <div class="langue-haut" id="seg-langue" role="group" aria-label="Langue · Language"><button type="button" data-v="fr" title="Français">FR</button><button type="button" data-v="en" title="English">EN</button></div>
       <span class="flamme-mini" id="flamme-mini" title="Jours d'affilée"></span>
       <button class="rond" id="btn-reglages" type="button" aria-label="Réglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
@@ -627,7 +632,6 @@ a.exo-mod:hover { transform: translateY(-2px); }
   <div class="boite" role="dialog" aria-labelledby="titre-reglages">
     <h2 id="titre-reglages">Réglages</h2>
     <section class="reg-section"><h3>Affichage</h3>
-      <div class="reg-ligne"><span>Langue · Language</span><div class="seg" id="seg-langue"><button type="button" data-v="fr">Français</button><button type="button" data-v="en">English</button></div></div>
       <div class="reg-ligne"><span>Thème</span><div class="seg" id="seg-theme"><button type="button" data-t="auto">Auto</button><button type="button" data-t="light">Clair</button><button type="button" data-t="dark">Sombre</button></div></div>
       <div class="reg-ligne"><span>Taille du texte des leçons</span><div class="seg" id="seg-taille"><button type="button" data-v="normal">Normale</button><button type="button" data-v="grand">Grande</button></div></div>
       <div class="reg-ligne"><span>Confettis et animations</span><div class="seg" id="seg-anim"><button type="button" data-v="oui">Oui</button><button type="button" data-v="non">Non</button></div></div>
